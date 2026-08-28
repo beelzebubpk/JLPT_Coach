@@ -1,73 +1,120 @@
-# N4 Sprint — คู่มือใช้งานบนมือถือ
+# JLPT Coach N5–N1 — Version 2
 
-N4 Sprint เป็นเว็บแอปแบบ Mobile-first ที่สร้างขึ้นสำหรับแผนสอบ JLPT N4 วันที่ 6 ธันวาคม 2026 โดยใช้ฐานคะแนนส่วนตัวดังนี้:
+แอป PWA แบบ Mobile-first สำหรับผู้เรียน JLPT ตั้งแต่ N5 ถึง N1 โดยสร้างแผนเฉพาะบุคคลจากระดับเป้าหมาย คะแนนราย Section, Reference Information A/B/C, จุดอ่อนที่ผู้เรียนระบุ, เวลาที่เรียนได้, ผลการฝึก, SRS, Mistake Log และ Mock Test
 
-- N5: 96/180, Listening 31/60, Reference A/A/A
-- N4 ล่าสุด: 75/180, Language Knowledge + Reading 51/120, Listening 24/60
-- Reference: Vocabulary B, Grammar A, Reading B
+## สิ่งใหม่ใน Version 2
 
-ระบบจึงให้น้ำหนัก Vocabulary 40%, Reading 25%, Listening 25% และ Grammar 10% โดยรักษา Grammar ที่เป็นจุดแข็ง และใช้คำศัพท์เป็นแกนเชื่อมไปยังการอ่านและการฟัง
+- เลือกระดับเป้าหมาย N5 / N4 / N3 / N2 / N1 ตั้งแต่ Onboarding
+- ช่องกรอกคะแนนเปลี่ยนตามโครงสร้างของระดับ
+  - N4/N5: Language Knowledge + Reading และ Listening
+  - N1/N2/N3: Language Knowledge, Reading และ Listening
+- วิเคราะห์คะแนนรวมและ Section minimum แยกกัน
+- คำนวณ Study Weight แบบ Adaptive สำหรับ Vocabulary/Kanji, Grammar, Reading และ Listening
+- Daily Quest เปลี่ยนตามคะแนน ข้อผิด ความแม่นยำ เวลาในการตอบ และจำนวนวันที่เหลือ
+- Progress แยกตามระดับ ผู้ใช้สลับเป้าหมายได้โดยข้อมูลระดับเดิมไม่หาย
+- เพิ่มผลสอบจริงหลายครั้ง และบันทึก Mock Test แยกตามระดับ
+- Local auto-save, Export/Import JSON และ Offline PWA
+- รองรับการย้าย Progress จาก N4 Sprint Version 1 เมื่อใช้ URL/Origin เดิม
 
-## ไฟล์ที่ใช้ได้ทันที
+## คลังเนื้อหาใน Release นี้
 
-### 1. N4_Sprint_Standalone.html
+- N4: คลังเต็มจาก N4 Sprint เดิม — Vocabulary 180, Grammar 41, Reading 20, Listening 20
+- N5 / N3 / N2 / N1: Starter Pack ต่อระดับ — Vocabulary 40, Grammar 15, Reading 6, Listening 6
 
-เหมาะกับการลองใช้ทันทีโดยไม่ต้องติดตั้งเซิร์ฟเวอร์:
+Adaptive Engine รองรับทุกระดับแล้ว แต่ Starter Pack ของ N5/N3/N2/N1 เป็นฐานเริ่มต้นสำหรับ Version 2 และสามารถขยาย `content.json` / `data.js` เพิ่มโดยไม่ต้องเปลี่ยนระบบหลัก
 
-1. ดาวน์โหลดไฟล์ไปยังโทรศัพท์
-2. เปิดด้วย Browser จริง เช่น Chrome, Edge หรือ Safari แทนหน้าพรีวิวของแอปจัดการไฟล์
-3. เลือกเวลาเรียน 15, 25 หรือ 40 นาที
-4. เข้า Settings แล้วตั้งเวลาเตือน
-5. Export progress เป็นระยะเพื่อสำรองข้อมูล
+## ไฟล์สำคัญ
 
-ไฟล์นี้รวม HTML, CSS, JavaScript และคลังโจทย์ไว้ในไฟล์เดียว จึงไม่ต้องใช้อินเทอร์เน็ตหลังดาวน์โหลด อย่างไรก็ตาม การเก็บ progress ของไฟล์ local อาจแตกต่างกันตามระบบปฏิบัติการและ Browser หากเปิดในโหมดพรีวิวชั่วคราว ข้อมูลอาจไม่คงอยู่
+- `index.html` — หน้าแอป
+- `styles.css` — UI/Responsive/Dark mode
+- `data.js` — คลังเนื้อหาที่ Browser โหลด
+- `content.json` — คลังเนื้อหารูปแบบ JSON สำหรับแก้ไข/ขยาย
+- `app.js` — Adaptive Engine, SRS, Mistake Log, Local Save และ UI logic
+- `manifest.webmanifest` — ข้อมูลติดตั้ง PWA
+- `sw.js` — Offline cache
+- `assets/` — Icon ของแอป
+- `JLPT_Coach_V2_Standalone.html` — รุ่นไฟล์เดียวสำหรับทดลอง
 
-### 2. N4_Sprint_PWA.zip
-
-เหมาะกับการติดตั้งเป็นแอปบน Home Screen และเก็บข้อมูลถาวรกว่า:
+## ติดตั้งผ่าน GitHub Pages
 
 1. แตกไฟล์ ZIP
-2. นำโฟลเดอร์ขึ้น Static hosting ที่รองรับ HTTPS หรือ Web server ภายในบริษัท
-3. เปิด `index.html` บนโทรศัพท์
-4. เลือก “Add to Home Screen” หรือ “Install app”
-5. หลังเปิดครั้งแรก ตัวแอปจะ cache ไฟล์หลักและใช้งานแบบออฟไลน์ได้
+2. อัปโหลด **เนื้อหาภายในโฟลเดอร์ทั้งหมด** ไปยัง Root ของ GitHub repository
+3. ตรวจว่า `index.html` อยู่หน้าแรกของ repository
+4. ไปที่ `Settings → Pages`
+5. เลือก `Deploy from a branch`
+6. เลือก `main` และ `/(root)` แล้ว Save
+7. เปิด URL ที่ GitHub Pages สร้างให้ด้วย Safari บน iPhone
+8. กด `Share → Add to Home Screen`
+9. เปิดแอปครั้งแรกขณะมีอินเทอร์เน็ต เพื่อให้ Service Worker เก็บ Offline cache
 
-## ระบบที่มีในแอป
+## อัปเดตจาก N4 Sprint เดิม
 
-- แผนรายวันปรับตามช่วงก่อนสอบ: Vocab Repair → Connect Skills → Exam Mode → Final Sprint
-- SRS สำหรับทบทวนคำที่ถึงกำหนดและนำข้อผิดกลับมาถามเร็วขึ้น
-- คลังคำศัพท์เน้น N4 จำนวน 180 คำ พร้อมคำอ่าน คำแปล ประโยคตัวอย่าง และเทคนิคจำ
-- Grammar maintenance 41 รูปประโยค เพื่อรักษาฐาน Grammar A
-- Reading 20 ชุด และ Listening 20 ชุด พร้อมเฉลยและเหตุผล
-- เสียงอ่านภาษาญี่ปุ่นผ่าน Japanese TTS ที่ติดตั้งในโทรศัพท์
-- Timer ต่อข้อ, XP, Streak, Energy และ Progress dashboard
-- Mistake log แบบกดดูโจทย์ คำตอบที่เลือก คำตอบที่ถูก และคำอธิบายได้
-- บันทึก Mock score แยก Language Knowledge + Reading และ Listening
-- Export/Import progress เป็น JSON
-- Dark mode
+### วิธีที่รักษา Local Progress ได้ง่ายที่สุด
 
-## การตั้งเตือน
+ใช้ repository และ URL เดิม:
 
-Notification ของเว็บแอปขึ้นกับข้อจำกัดของ Browser และระบบปฏิบัติการ และไม่ควรถือว่าเป็นการเตือนพื้นหลังที่รับประกันเมื่อแอปถูกปิดทั้งหมด
+1. ใน N4 Sprint เดิม เข้า Settings แล้ว Export Progress ก่อน
+2. อัปโหลดไฟล์ Version 2 ทับไฟล์เดิมใน repository
+3. รอ GitHub Pages Deploy
+4. เปิด URL เดิมใน Safari แล้ว Refresh
+5. เปิดจาก Home Screen อีกครั้ง
 
-วิธีที่เสถียรกว่าคือ:
+Version 2 จะตรวจ Local Storage key ของ N4 Sprint เดิมและย้าย XP, Streak, SRS, Mistake Log, Mock score และข้อมูล N4 ที่รองรับเข้าสู่ระบบใหม่อัตโนมัติ
 
-1. ตั้งเวลาใน Settings
-2. กด “เพิ่มเตือนลงปฏิทิน”
-3. เปิดไฟล์ `.ics` และเพิ่มกิจกรรมซ้ำทุกวันลง Calendar ของโทรศัพท์
+### กรณีใช้ repository หรือ URL ใหม่
 
-กิจกรรมวันสอบถูกตั้งเป็น All-day เพื่อไม่เดาเวลารายงานตัว ผู้ใช้ต้องตรวจ Test Voucher อีกครั้งเมื่อได้รับเอกสารจริง
+Local Storage จะไม่ตามไปเอง เพราะถือเป็นเว็บไซต์คนละ Origin ให้ใช้:
 
-## การเก็บข้อมูลและความเป็นส่วนตัว
+1. Export Progress จากแอปเดิม
+2. เปิด Version 2
+3. ไปที่ Profile → Import Progress
+4. เลือกไฟล์ JSON ที่ Export ไว้
 
-- ไม่มีระบบสมาชิกหรือเซิร์ฟเวอร์หลังบ้าน
-- Progress เก็บใน Browser ของอุปกรณ์ด้วย Local Storage
-- Export progress เพื่อสำรองหรือย้ายเครื่องได้
-- Reset จะลบ XP, Streak, SRS และประวัติข้อผิดของ Browser นั้น
+## Auto Save และความเป็นส่วนตัว
+
+- แอปบันทึกอัตโนมัติใน Local Storage หลังตอบคำถาม จบบทเรียน เปลี่ยน Settings เพิ่มคะแนน หรือแก้ Profile
+- ไม่มี Login และไม่มี Backend
+- ผู้ใช้หลายคนเปิด URL เดียวกันจากคนละเครื่อง จะมี Save แยกกัน
+- การลบ Safari Website Data, ลบข้อมูลเว็บไซต์ หรือ Reset ในแอปจะลบ Progress ของเครื่องนั้น
+- แนะนำ Export Backup อย่างน้อยสัปดาห์ละครั้ง
+
+## Adaptive Plan ใช้ข้อมูลอะไร
+
+1. คะแนนสอบล่าสุดในระดับเป้าหมาย
+2. คะแนนระดับใกล้เคียงเมื่อยังไม่มีคะแนนตรงระดับ
+3. Reference Information A/B/C
+4. Self-assessment เช่น Vocabulary, Kanji, Reading, Listening หรือ Speed
+5. Accuracy และเวลาตอบแยกทักษะ
+6. Mistake Log และจำนวนครั้งที่ผิดซ้ำ
+7. SRS due items
+8. จำนวนวันถึงวันสอบ
+9. Mock Test ล่าสุด
+
+ทักษะทุกด้านมี Maintenance floor เพื่อไม่ให้ระบบตัดทักษะใดออกทั้งหมด แต่จุดอ่อนจะได้รับสัดส่วนเวลามากกว่า
+
+## การเตือนบน iPhone
+
+Browser Notification ไม่ควรถูกถือว่าเป็น Push Notification ที่รับประกันเมื่อปิดแอปทั้งหมด วิธีที่เสถียรกว่าคือกดดาวน์โหลด `.ics` ในหน้า Profile แล้วเพิ่มกิจกรรมรายวันลง Apple Calendar
 
 ## ข้อจำกัด
 
-- เนื้อหาเป็นแบบฝึกที่สร้างเพื่อการเรียนส่วนตัว ไม่ใช่ข้อสอบทางการหรือคลังคำศัพท์ทางการของ JLPT
-- คะแนน Projected score เป็นเพียงตัวชี้วัดแรงจูงใจ ไม่ใช่คะแนนรับรอง
-- เสียงฟังเป็น Text-to-Speech เสียงเดียว ไม่ใช่ไฟล์เสียงผู้พูดหลายคนแบบข้อสอบจริง
-- แอปไม่มี AI ภายในและไม่ส่งข้อมูลออกจากเครื่อง คำถามที่ต้องการคำอธิบายเชิงลึกสามารถนำมาถามต่อใน ChatGPT ได้
+- คลังข้อสอบเป็นเนื้อหาฝึกที่สร้างขึ้น ไม่ใช่ข้อสอบทางการของ JLPT
+- Projected Score และ Readiness เป็นตัวช่วยติดตาม ไม่ใช่การรับรองผลสอบ
+- Listening ใช้ Japanese Text-to-Speech ของอุปกรณ์ ไม่ใช่เสียงผู้พูดหลายคนแบบข้อสอบจริง
+- รุ่น Standalone อาจเก็บ Local Storage จากไฟล์ local ไม่เสถียรเท่า PWA ที่เปิดผ่าน HTTPS
+- คลัง N5/N3/N2/N1 ใน Version 2 เป็น Starter Pack และควรเพิ่มเนื้อหาก่อนใช้เป็นหลักสูตรระยะยาวเต็มรูปแบบ
+
+## การทดสอบ Release
+
+ทดสอบแล้วกับ Mobile viewport 390 × 844:
+
+- Onboarding 4 ขั้น
+- เลือก N5–N1
+- Dynamic score fields 2 หรือ 3 Section ตามระดับ
+- Adaptive analysis preview
+- Daily Quest และ Priority weighting
+- Quick lesson, answer grading และคำอธิบายข้อผิด
+- Mock/result forms
+- Responsive mobile UI
+- ไม่มี JavaScript page error ใน flow หลักที่ทดสอบ
+

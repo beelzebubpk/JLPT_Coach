@@ -1,2 +1,12 @@
-N4 Sprint v1.1.0
-Built for JLPT N4 exam plan through 2026-12-06.
+JLPT Coach N5–N1
+Version: 2.0.0
+Build date: 2026-08-28
+Storage key: jlpt-coach-state-v2
+
+Core features:
+- N5–N1 target selection
+- Dynamic JLPT score fields by level
+- Adaptive study weights
+- Daily Quest, SRS, Mistake Log, Mock Test
+- Local auto-save and JSON backup
+- PWA offline support

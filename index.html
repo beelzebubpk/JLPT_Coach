@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#35b79d">
-  <meta name="description" content="แอปฝึก JLPT N4 แบบออฟไลน์ที่ปรับตามคะแนนของ Patipat">
+  <meta name="description" content="JLPT Coach N5–N1: แอปวางแผนเรียนแบบ Adaptive จากคะแนน จุดอ่อน และเวลาที่มี">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="N4 Sprint">
-  <title>N4 Sprint — JLPT N4 Daily Coach</title>
+  <meta name="apple-mobile-web-app-title" content="JLPT Coach">
+  <title>JLPT Coach — N5 to N1</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
@@ -20,12 +20,13 @@
       <div class="brand">
         <div class="brand-mark" data-mascot="icon" aria-hidden="true"></div>
         <div class="brand-copy">
-          <h1 class="brand-title">N4 Sprint</h1>
-          <p class="brand-subtitle" id="topbarSubtitle">แผนเฉพาะของ Patipat</p>
+          <h1 class="brand-title">JLPT Coach</h1>
+          <p class="brand-subtitle" id="topbarSubtitle">แผนส่วนตัว N5–N1</p>
         </div>
       </div>
       <div class="status-pills" aria-label="สถานะการเรียน">
-        <div class="status-pill streak" title="จำนวนวันที่เรียนต่อเนื่อง"><span class="emoji">🔥</span><span id="topStreak">0</span><span class="label">วัน</span></div>
+        <div class="status-pill level-pill" title="ระดับเป้าหมาย"><span id="topLevel">N4</span></div>
+        <div class="status-pill streak" title="วันที่เรียนต่อเนื่อง"><span class="emoji">🔥</span><span id="topStreak">0</span><span class="label">วัน</span></div>
         <div class="status-pill xp" title="คะแนนสะสม"><span class="emoji">✨</span><span id="topXp">0</span></div>
       </div>
     </header>
@@ -34,9 +35,9 @@
       <section class="view active" id="view-home" aria-labelledby="homeHeading">
         <article class="hero-card card">
           <div>
-            <div class="hero-eyebrow">🎯 เป้าหมายส่วนตัว · JLPT N4</div>
-            <h1 id="homeHeading">วันนี้ขยับอีกนิด<br>ก็ใกล้คำว่า “ผ่าน” ขึ้นอีก</h1>
-            <p class="hero-copy" id="heroCopy">เน้นศัพท์ก่อน แล้วเชื่อมเข้ากับการอ่านและการฟังแบบสั้น ๆ สำหรับชีวิตวัยทำงาน</p>
+            <div class="hero-eyebrow" id="heroEyebrow">🎯 เป้าหมายส่วนตัว · JLPT N4</div>
+            <h1 id="homeHeading">วันนี้เรียนสิ่งที่คุ้มที่สุด<br>สำหรับคะแนนของคุณ</h1>
+            <p class="hero-copy" id="heroCopy">ระบบวิเคราะห์คะแนน จุดอ่อน และข้อที่พลาด แล้วเลือกภารกิจประจำวันให้อัตโนมัติ</p>
             <div class="hero-countdown"><strong id="daysLeft">—</strong><span>วันถึงวันสอบ</span></div>
           </div>
           <div class="hero-mascot" data-mascot="wave" aria-hidden="true"></div>
@@ -49,8 +50,8 @@
         <article class="plan-card card">
           <div class="plan-top">
             <div>
-              <h3 class="plan-title" id="dailyPlanTitle">Daily Sprint</h3>
-              <p class="plan-subtitle" id="dailyPlanSubtitle">ประมาณ 25 นาที · ปรับตามข้อที่เคยผิด</p>
+              <h3 class="plan-title" id="dailyPlanTitle">Adaptive Daily Quest</h3>
+              <p class="plan-subtitle" id="dailyPlanSubtitle">ปรับตามคะแนนและคำตอบล่าสุด</p>
             </div>
             <span class="phase-chip" id="phaseChip">Phase 1</span>
           </div>
@@ -59,21 +60,30 @@
         </article>
 
         <div class="section-title-row">
-          <h2>เส้นทางจาก 75 → 105</h2>
-          <span class="section-note">เป้าหมายซ้อมเผื่อความกดดันวันจริง</span>
+          <h2>Adaptive Plan</h2>
+          <span class="section-note" id="planUpdatedLabel">คำนวณจากข้อมูลปัจจุบัน</span>
+        </div>
+        <article class="adaptive-card card">
+          <div class="adaptive-head">
+            <div class="priority-orb" id="priorityOrb">🧠</div>
+            <div><span class="eyebrow-mini">สิ่งที่ควรเน้นที่สุดตอนนี้</span><h3 id="priorityTitle">Vocabulary / Kanji</h3><p id="priorityReason">กำลังวิเคราะห์ข้อมูลของคุณ</p></div>
+          </div>
+          <div class="weight-list" id="homeWeightList"></div>
+        </article>
+
+        <div class="section-title-row">
+          <h2>ความพร้อมสอบ</h2>
+          <span class="section-note" id="scoreTargetLabel">เป้าหมายซ้อมมี Safety Margin</span>
         </div>
         <article class="score-card card">
           <div class="score-ring" id="scoreRing">
-            <div class="score-ring-inner"><strong id="projectedScore">75</strong><span>/ 105 เป้าหมาย</span></div>
+            <div class="score-ring-inner"><strong id="projectedScore">—</strong><span id="scoreRingCaption">รอคะแนนฐาน</span></div>
           </div>
           <div class="score-copy">
-            <h3 id="scoreHeadline">ฐานเดิมของคุณแข็งที่ Grammar</h3>
-            <p id="scoreDescription">ระบบจะให้น้ำหนัก Vocabulary 40% และคอยดัน Reading กับ Listening ขึ้นพร้อมกัน</p>
-            <div class="score-bars">
-              <div class="mini-bar-row"><span>คำศัพท์</span><div class="mini-bar"><i id="homeVocabBar" style="width:34%"></i></div><b id="homeVocabLabel">B</b></div>
-              <div class="mini-bar-row"><span>ไวยากรณ์</span><div class="mini-bar"><i id="homeGrammarBar" style="width:76%"></i></div><b id="homeGrammarLabel">A</b></div>
-              <div class="mini-bar-row"><span>การฟัง</span><div class="mini-bar"><i id="homeListeningBar" style="width:40%"></i></div><b id="homeListeningLabel">24</b></div>
-            </div>
+            <span class="readiness-chip" id="readinessChip">Diagnostic</span>
+            <h3 id="scoreHeadline">เริ่มจากข้อมูลจริง ไม่เดาจุดอ่อน</h3>
+            <p id="scoreDescription">กรอกคะแนนสอบหรือ Mock Test แล้วระบบจะคำนวณช่องว่างและความเสี่ยงราย Section</p>
+            <div class="section-risk-list" id="sectionRiskList"></div>
           </div>
         </article>
 
@@ -86,162 +96,114 @@
         <div class="section-title-row"><h2>โค้ชแนะนำวันนี้</h2></div>
         <article class="insight-card card">
           <div class="insight-icon" id="insightIcon">💡</div>
-          <div>
-            <h3 id="insightTitle">อย่าจำคำแปลอย่างเดียว</h3>
-            <p id="insightText">คำศัพท์แต่ละคำจะมาพร้อมคำที่ใช้คู่กัน ประโยคตัวอย่าง และคำถามซ้ำตามระยะ เพื่อให้ดึงคำตอบได้เร็วขึ้นในข้อสอบจริง</p>
-          </div>
+          <div><h3 id="insightTitle">ฝึกให้ตรงจุด</h3><p id="insightText">ข้อผิดวันนี้จะเปลี่ยนแผนของวันถัดไปโดยอัตโนมัติ</p></div>
         </article>
       </section>
 
       <section class="view" id="view-learn" aria-labelledby="learnHeading">
         <div class="section-title-row">
-          <div>
-            <h2 id="learnHeading">เรียนแบบเลือกโหมด</h2>
-            <span class="section-note">ใช้เมื่อมีเวลามากกว่าภารกิจประจำวัน</span>
-          </div>
+          <div><h2 id="learnHeading">เลือกโหมดฝึก</h2><span class="section-note" id="learnLevelNote">คลังระดับ N4</span></div>
+          <button type="button" class="secondary-btn small-btn" id="quickFiveBtn">⚡ 5 นาที</button>
         </div>
         <div class="learn-summary">
           <div class="summary-tile"><strong id="learnedCount">0</strong><span>คำที่เริ่มเรียน</span></div>
           <div class="summary-tile"><strong id="dueCount">0</strong><span>รอทบทวน</span></div>
-          <div class="summary-tile"><strong id="accuracyCount">—</strong><span>ความแม่นยำ</span></div>
+          <div class="summary-tile"><strong id="accuracyCount">—</strong><span>ความแม่นยำศัพท์</span></div>
         </div>
 
         <div class="mode-grid">
-          <button class="mode-card" type="button" data-mode="vocab">
-            <span class="mode-icon">🧠</span><strong>Vocabulary Focus</strong><small>ศัพท์ใหม่ + คำอ่าน + การใช้คำ เน้นจุดอ่อนหลัก</small>
-          </button>
-          <button class="mode-card" type="button" data-mode="review">
-            <span class="mode-icon">🔁</span><strong>Smart Review</strong><small>ทบทวนคำที่ถึงกำหนดและข้อที่เคยตอบผิด</small>
-          </button>
-          <button class="mode-card" type="button" data-mode="reading">
-            <span class="mode-icon">📖</span><strong>Reading Sprint</strong><small>บทอ่านสั้น จับเวลา และอธิบายจุดชี้คำตอบ</small>
-          </button>
-          <button class="mode-card" type="button" data-mode="listening">
-            <span class="mode-icon">🎧</span><strong>Listening Sprint</strong><small>ฟังบทสนทนาด้วยเสียงญี่ปุ่น พร้อม Script หลังตอบ</small>
-          </button>
-          <button class="mode-card" type="button" data-mode="grammar">
-            <span class="mode-icon">🧩</span><strong>Grammar Tune-up</strong><small>รักษาจุดแข็ง Grammar A ด้วยโจทย์สั้นและคำอธิบาย</small>
-          </button>
+          <button class="mode-card featured-mode" type="button" data-mode="mixed"><span class="mode-icon">🎯</span><strong>Adaptive Mix</strong><small>ผสมทักษะตามน้ำหนักแผนปัจจุบัน</small></button>
+          <button class="mode-card" type="button" data-mode="vocab"><span class="mode-icon">🧠</span><strong>Vocabulary / Kanji</strong><small>คำใหม่ คำอ่าน บริบท และ SRS</small></button>
+          <button class="mode-card" type="button" data-mode="review"><span class="mode-icon">🔁</span><strong>Smart Review</strong><small>คำถึงกำหนดและข้อที่เคยผิด</small></button>
+          <button class="mode-card" type="button" data-mode="reading"><span class="mode-icon">📖</span><strong>Reading Sprint</strong><small>จับเวลาและหาจุดชี้คำตอบ</small></button>
+          <button class="mode-card" type="button" data-mode="listening"><span class="mode-icon">🎧</span><strong>Listening Sprint</strong><small>ฟังก่อนดู Script พร้อมเฉลย</small></button>
+          <button class="mode-card" type="button" data-mode="grammar"><span class="mode-icon">🧩</span><strong>Grammar Tune-up</strong><small>ฝึก Pattern และตัวเลือกที่สับสน</small></button>
         </div>
 
-        <div class="section-title-row">
-          <h3>คลังหัวข้อคำศัพท์</h3>
-          <span class="section-note">180 คำเป้าหมายสูง</span>
-        </div>
+        <div class="section-title-row"><h3>คลังหัวข้อระดับปัจจุบัน</h3><span class="section-note" id="contentCountLabel"></span></div>
         <div class="theme-list" id="themeList"></div>
       </section>
 
       <section class="view" id="view-review" aria-labelledby="reviewHeading">
         <div class="section-title-row">
-          <div><h2 id="reviewHeading">คลังทบทวน</h2><span class="section-note">ค้นคำศัพท์ ดูข้อผิด และฝึกเฉพาะจุด</span></div>
+          <div><h2 id="reviewHeading">คลังทบทวน</h2><span class="section-note">ข้อมูลแยกตามระดับเป้าหมายของเครื่องนี้</span></div>
           <button type="button" class="secondary-btn small-btn" id="quickReviewBtn">ทบทวนตอนนี้</button>
         </div>
-        <label class="search-box">
-          <span>🔎</span>
-          <span class="sr-only">ค้นคำศัพท์</span>
-          <input type="search" id="wordSearch" placeholder="ค้นภาษาญี่ปุ่น คำอ่าน ไทย หรืออังกฤษ">
-        </label>
+        <label class="search-box"><span>🔎</span><span class="sr-only">ค้นคำศัพท์</span><input type="search" id="wordSearch" placeholder="ค้นญี่ปุ่น คำอ่าน ไทย หรืออังกฤษ"></label>
         <div class="segmented" role="tablist" aria-label="ตัวกรองคำศัพท์">
           <button type="button" class="active" data-review-filter="due">ถึงกำหนด</button>
           <button type="button" data-review-filter="weak">จุดอ่อน</button>
           <button type="button" data-review-filter="all">ทั้งหมด</button>
         </div>
         <div class="word-list" id="wordList"></div>
-
-        <div class="section-title-row">
-          <h3>ข้อที่ตอบผิดล่าสุด</h3>
-          <button type="button" class="ghost-btn small-btn" id="clearMistakesBtn">ล้างประวัติ</button>
-        </div>
+        <div class="section-title-row"><h3>ข้อที่ตอบผิดล่าสุด</h3><button type="button" class="ghost-btn small-btn" id="clearMistakesBtn">ล้างประวัติ</button></div>
         <div id="mistakeList"></div>
       </section>
 
       <section class="view" id="view-progress" aria-labelledby="progressHeading">
         <div class="section-title-row">
-          <div><h2 id="progressHeading">ความคืบหน้า</h2><span class="section-note">วัดจากการฝึกในแอป ไม่ใช่คะแนน JLPT อย่างเป็นทางการ</span></div>
-          <button type="button" class="secondary-btn small-btn" id="addMockBtn">+ Mock score</button>
+          <div><h2 id="progressHeading">ความคืบหน้า</h2><span class="section-note">วัดจากการฝึกและคะแนนที่กรอก ไม่ใช่คะแนนรับรอง</span></div>
+          <button type="button" class="secondary-btn small-btn" id="addMockBtn">+ Mock</button>
         </div>
         <div class="stats-grid">
-          <article class="stat-card card"><div class="label">วันที่เรียนต่อเนื่อง</div><div class="value" id="progressStreak">0</div><div class="delta">สร้างนิสัยก่อนสร้างความเร็ว</div></article>
-          <article class="stat-card card"><div class="label">XP สะสม</div><div class="value" id="progressXp">0</div><div class="delta" id="xpNextLabel">อีก 100 XP ถึงเลเวลถัดไป</div></article>
-          <article class="stat-card card"><div class="label">คำที่เริ่มเรียน</div><div class="value" id="progressLearned">0</div><div class="delta">จากคลังเป้าหมาย 180 คำ</div></article>
-          <article class="stat-card card"><div class="label">คำที่จำได้ดี</div><div class="value" id="progressMastered">0</div><div class="delta">ตอบถูกและเว้นระยะได้ ≥ 7 วัน</div></article>
+          <article class="stat-card card"><div class="label">Streak</div><div class="value" id="progressStreak">0</div><div class="delta">วันที่เรียนต่อเนื่อง</div></article>
+          <article class="stat-card card"><div class="label">XP</div><div class="value" id="progressXp">0</div><div class="delta" id="xpNextLabel">อีก 100 XP ถึงเลเวลถัดไป</div></article>
+          <article class="stat-card card"><div class="label">เริ่มเรียน</div><div class="value" id="progressLearned">0</div><div class="delta" id="progressLearnedCaption">คำในระดับนี้</div></article>
+          <article class="stat-card card"><div class="label">จำได้ดี</div><div class="value" id="progressMastered">0</div><div class="delta">ช่วงห่าง SRS ≥ 7 วัน</div></article>
         </div>
 
         <div class="section-title-row"><h3>ความแม่นยำแยกทักษะ</h3></div>
         <article class="skill-bars card" id="skillBars"></article>
 
-        <div class="section-title-row"><h3>แนวโน้มคะแนนซ้อม</h3><span class="section-note">Target 100–107+</span></div>
+        <div class="section-title-row"><h3>น้ำหนักแผนล่าสุด</h3><span class="section-note">ปรับหลังตอบคำถาม</span></div>
+        <article class="skill-bars card" id="progressWeightBars"></article>
+
+        <div class="section-title-row"><h3>คะแนนและ Readiness</h3><span class="section-note" id="progressTargetNote"></span></div>
         <article class="score-card card">
-          <div class="score-ring" id="progressScoreRing"><div class="score-ring-inner"><strong id="progressProjectedScore">75</strong><span>/ 180 ประมาณการ</span></div></div>
-          <div class="score-copy"><h3 id="progressScoreText">เริ่มจากคะแนนจริง 75</h3><p>คะแนนประมาณการเป็นเพียงตัวชี้วัดแรงจูงใจ ระบบจะให้น้ำหนักผล Mock ที่คุณกรอกมากกว่าคะแนนแบบฝึกสั้น</p></div>
+          <div class="score-ring" id="progressScoreRing"><div class="score-ring-inner"><strong id="progressProjectedScore">—</strong><span>/ 180</span></div></div>
+          <div class="score-copy"><span class="readiness-chip" id="progressReadinessChip">Diagnostic</span><h3 id="progressScoreText">เพิ่มผลสอบหรือ Mock เพื่อเริ่มวิเคราะห์</h3><p id="progressScoreDetail">ระบบจะตรวจทั้งคะแนนรวมและ Section minimum</p></div>
         </article>
 
         <div class="section-title-row"><h3>ประวัติ Mock Test</h3></div>
         <div class="mock-list" id="mockList"></div>
       </section>
 
-      <section class="view" id="view-settings" aria-labelledby="settingsHeading">
-        <div class="section-title-row"><div><h2 id="settingsHeading">ตั้งค่า</h2><span class="section-note">ทุกข้อมูลเก็บในเครื่องของคุณ</span></div></div>
+      <section class="view" id="view-profile" aria-labelledby="profileHeading">
+        <div class="section-title-row"><div><h2 id="profileHeading">โปรไฟล์และตั้งค่า</h2><span class="section-note">Auto save ลงในเครื่องนี้</span></div><button type="button" class="secondary-btn small-btn" id="editProfileBtn">แก้โปรไฟล์</button></div>
+
+        <article class="profile-overview card">
+          <div class="profile-avatar" data-mascot="icon"></div>
+          <div class="profile-overview-copy"><span class="eyebrow-mini">ผู้เรียน</span><h3 id="profileNameLabel">ผู้เรียน</h3><div class="badge-row"><span class="target-level-badge" id="profileTargetLevel">N4</span><span class="phase-chip" id="profilePhase">Phase 1</span></div><p id="profileSummaryText"></p></div>
+        </article>
+
+        <div class="section-title-row"><h3>ผลสอบที่ใช้วางแผน</h3><button type="button" class="ghost-btn small-btn" id="addResultBtn">+ เพิ่มผลสอบ</button></div>
+        <div id="examResultList"></div>
+
+        <div class="section-title-row"><h3>การเรียนประจำวัน</h3></div>
         <article class="settings-card card">
-          <div class="setting-row">
-            <div><div class="setting-title">เวลาเรียนต่อวัน</div><div class="setting-desc">ระบบจะปรับจำนวนศัพท์และข้อทบทวน</div></div>
-            <div class="setting-control"><select id="dailyMinutesSelect"><option value="15">15 นาที</option><option value="25">25 นาที</option><option value="40">40 นาที</option></select></div>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-title">เวลาเตือน</div><div class="setting-desc">แจ้งเตือนในแอปเมื่อเปิดอยู่ และใช้ไฟล์ปฏิทินสำหรับเตือนพื้นหลัง</div></div>
-            <div class="setting-control"><input type="time" id="reminderTimeInput" value="20:30"></div>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-title">เสียงอ่านภาษาญี่ปุ่น</div><div class="setting-desc">ใช้เสียง Japanese ที่มีในโทรศัพท์</div></div>
-            <label class="switch"><input type="checkbox" id="soundToggle" checked><span></span></label>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-title">โหมดมืด</div><div class="setting-desc">ลดความสว่างสำหรับเรียนตอนกลางคืน</div></div>
-            <label class="switch"><input type="checkbox" id="darkToggle"><span></span></label>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-title">วันสอบ</div><div class="setting-desc">ตั้งไว้เป็น 6 ธันวาคม 2026</div></div>
-            <div class="setting-control"><input type="date" id="examDateInput" value="2026-12-06"></div>
-          </div>
+          <div class="setting-row"><div><div class="setting-title">เวลาเรียนต่อวัน</div><div class="setting-desc">ปรับจำนวนโจทย์และภารกิจ</div></div><div class="setting-control"><select id="dailyMinutesSelect"><option value="10">10 นาที</option><option value="15">15 นาที</option><option value="25">25 นาที</option><option value="40">40 นาที</option><option value="60">60 นาที</option></select></div></div>
+          <div class="setting-row"><div><div class="setting-title">เวลาเตือน</div><div class="setting-desc">ใช้กับ Notification/ไฟล์ Calendar</div></div><div class="setting-control"><input type="time" id="reminderTimeInput" value="20:30"></div></div>
+          <div class="setting-row"><div><div class="setting-title">เสียงอ่านภาษาญี่ปุ่น</div><div class="setting-desc">ใช้ Japanese TTS ในโทรศัพท์</div></div><label class="switch"><input type="checkbox" id="soundToggle" checked><span></span></label></div>
+          <div class="setting-row"><div><div class="setting-title">โหมดมืด</div><div class="setting-desc">เหมาะกับการเรียนช่วงกลางคืน</div></div><label class="switch"><input type="checkbox" id="darkToggle"><span></span></label></div>
+          <div class="setting-row"><div><div class="setting-title">วันสอบเป้าหมาย</div><div class="setting-desc" id="examDateDesc">ใช้คำนวณ Study Phase</div></div><div class="setting-control"><input type="date" id="examDateInput" value="2026-12-06"></div></div>
         </article>
 
         <div class="section-title-row"><h3>การเตือนและติดตั้ง</h3></div>
         <article class="settings-card card">
-          <div class="setting-row">
-            <div><div class="setting-title">อนุญาต Notification</div><div class="setting-desc" id="notificationStatus">ยังไม่ได้อนุญาต</div></div>
-            <button type="button" class="secondary-btn small-btn" id="notificationBtn">เปิดการเตือน</button>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-title">เพิ่มเตือนลงปฏิทิน</div><div class="setting-desc">สร้างกิจกรรมทุกวันจนถึงก่อนสอบ พร้อมกิจกรรมวันสอบ</div></div>
-            <button type="button" class="ghost-btn small-btn" id="calendarBtn">ดาวน์โหลด .ics</button>
-          </div>
-          <div class="setting-row" id="installRow">
-            <div><div class="setting-title">ติดตั้งบนหน้าจอมือถือ</div><div class="setting-desc" id="installDesc">เปิดผ่าน HTTPS แล้วกดติดตั้งเป็นแอป</div></div>
-            <button type="button" class="primary-btn small-btn" id="installBtn">ติดตั้ง</button>
-          </div>
+          <div class="setting-row"><div><div class="setting-title">อนุญาต Notification</div><div class="setting-desc" id="notificationStatus">ยังไม่ได้อนุญาต</div></div><button type="button" class="secondary-btn small-btn" id="notificationBtn">เปิดการเตือน</button></div>
+          <div class="setting-row"><div><div class="setting-title">เพิ่มเตือนลงปฏิทิน</div><div class="setting-desc">สร้างกิจกรรมรายวันจนถึงวันสอบ</div></div><button type="button" class="ghost-btn small-btn" id="calendarBtn">ดาวน์โหลด .ics</button></div>
+          <div class="setting-row" id="installRow"><div><div class="setting-title">ติดตั้งบนหน้าจอมือถือ</div><div class="setting-desc" id="installDesc">บน iPhone ใช้ Safari → Share → Add to Home Screen</div></div><button type="button" class="primary-btn small-btn" id="installBtn">ติดตั้ง</button></div>
         </article>
 
         <div class="section-title-row"><h3>สำรองข้อมูล</h3></div>
         <article class="settings-card card">
-          <div class="setting-row">
-            <div><div class="setting-title">Export progress</div><div class="setting-desc">ดาวน์โหลดไฟล์ JSON เพื่อสำรองหรือย้ายเครื่อง</div></div>
-            <button type="button" class="ghost-btn small-btn" id="exportBtn">Export</button>
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-title">Import progress</div><div class="setting-desc">นำไฟล์สำรองกลับเข้าแอป</div></div>
-            <button type="button" class="ghost-btn small-btn" id="importBtn">Import</button>
-            <input type="file" id="importFile" accept="application/json" class="hidden">
-          </div>
-          <div class="setting-row">
-            <div><div class="setting-title">เริ่มใหม่ทั้งหมด</div><div class="setting-desc">ลบ XP, streak, SRS และประวัติข้อผิดในเครื่องนี้</div></div>
-            <button type="button" class="danger-btn small-btn" id="resetBtn">Reset</button>
-          </div>
+          <div class="setting-row"><div><div class="setting-title">Export progress</div><div class="setting-desc">สำรอง Profile, SRS, ข้อผิด และคะแนน</div></div><button type="button" class="ghost-btn small-btn" id="exportBtn">Export</button></div>
+          <div class="setting-row"><div><div class="setting-title">Import progress</div><div class="setting-desc">ย้ายข้อมูลไปอีกเครื่อง</div></div><button type="button" class="ghost-btn small-btn" id="importBtn">Import</button><input type="file" id="importFile" accept="application/json" class="hidden"></div>
+          <div class="setting-row"><div><div class="setting-title">เริ่มใหม่ทั้งหมด</div><div class="setting-desc">ลบข้อมูล Local ของแอปนี้ในเครื่อง</div></div><button type="button" class="danger-btn small-btn" id="resetBtn">Reset</button></div>
         </article>
 
-        <div class="section-title-row"><h3>เกี่ยวกับแผนนี้</h3></div>
-        <article class="card about-note">
-          คุณมีฐานจาก N5 ที่ผ่าน 96/180 (A/A/A) และแผนหลักเริ่มจากผล N4 ล่าสุด: 75/180, Language Knowledge + Reading 51/120, Listening 24/60 และ Reference Information เป็น Vocabulary B, Grammar A, Reading B จึงให้น้ำหนักศัพท์ 40%, Reading 25%, Listening 25% และ Grammar 10%. เนื้อหาในแอปเป็นแบบฝึกที่สร้างขึ้นเพื่อการฝึกส่วนตัว ไม่ใช่ข้อสอบทางการของ JLPT และคะแนนประมาณการไม่ใช่คะแนนรับรองผลสอบ
-        </article>
+        <div class="section-title-row"><h3>เกี่ยวกับ Version 2</h3></div>
+        <article class="card about-note" id="aboutNote">รองรับ N5–N1, รูปแบบคะแนนตามระดับ, Adaptive Plan, SRS, Mistake Log และ Local Save โดยไม่ต้องมีบัญชีผู้ใช้ ข้อมูลของคนละเครื่องจะแยกจากกัน</article>
       </section>
     </main>
 
@@ -250,7 +212,7 @@
       <button type="button" class="nav-btn" data-view="learn"><span class="nav-icon">🌱</span><span>เรียน</span></button>
       <button type="button" class="nav-btn" data-view="review"><span class="nav-icon">🔁</span><span>ทบทวน</span></button>
       <button type="button" class="nav-btn" data-view="progress"><span class="nav-icon">📈</span><span>ความคืบหน้า</span></button>
-      <button type="button" class="nav-btn" data-view="settings"><span class="nav-icon">⚙️</span><span>ตั้งค่า</span></button>
+      <button type="button" class="nav-btn" data-view="profile"><span class="nav-icon">👤</span><span>โปรไฟล์</span></button>
     </nav>
   </div>
 
@@ -258,59 +220,89 @@
     <div class="lesson-shell">
       <header class="lesson-header">
         <button type="button" class="lesson-close" id="lessonCloseBtn" aria-label="ออกจากบทเรียน">✕</button>
-        <div class="lesson-progress" aria-label="ความคืบหน้าบทเรียน"><div id="lessonProgressFill"></div></div>
+        <div class="lesson-progress" aria-label="ความคืบหน้า"><div id="lessonProgressFill"></div></div>
         <div class="lesson-energy" id="lessonEnergy">💚 5</div>
       </header>
       <main class="lesson-main" id="lessonMain"></main>
-      <footer class="lesson-footer" id="lessonFooter">
-        <div class="feedback-panel" id="feedbackPanel"><h3 class="feedback-title" id="feedbackTitle"></h3><p class="feedback-text" id="feedbackText"></p></div>
-        <button type="button" class="primary-btn full" id="lessonActionBtn">ตรวจคำตอบ</button>
-      </footer>
+      <footer class="lesson-footer" id="lessonFooter"><div class="feedback-panel" id="feedbackPanel"><h3 class="feedback-title" id="feedbackTitle"></h3><p class="feedback-text" id="feedbackText"></p></div><button type="button" class="primary-btn full" id="lessonActionBtn">ตรวจคำตอบ</button></footer>
     </div>
   </section>
 
   <div class="modal-backdrop" id="mockModal" role="dialog" aria-modal="true" aria-labelledby="mockModalTitle">
     <div class="modal">
       <h2 id="mockModalTitle">บันทึกคะแนน Mock Test</h2>
-      <p>กรอกคะแนนตาม Scoring Section เพื่อให้แนวโน้มในแอปสะท้อนผลซ้อมจริงมากขึ้น</p>
-      <form id="mockForm">
+      <p id="mockModalSubtitle">ช่องคะแนนจะเปลี่ยนตามระดับเป้าหมาย</p>
+      <form id="mockForm"><div class="form-grid"><div class="form-group"><label for="mockDate">วันที่ทำ</label><input type="date" id="mockDate" required></div><div id="mockScoreFields" class="form-grid nested-grid"></div><div class="form-group"><label for="mockNote">หมายเหตุ</label><textarea id="mockNote" rows="2" placeholder="เช่น ศัพท์ช้า / อ่านไม่ทัน / ฟังตัวเลขพลาด"></textarea></div></div><div class="modal-actions"><button type="button" class="ghost-btn" data-close-modal="mockModal">ยกเลิก</button><button type="submit" class="primary-btn">บันทึกคะแนน</button></div></form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultModalTitle">
+    <div class="modal">
+      <h2 id="resultModalTitle">เพิ่มผลสอบ JLPT</h2>
+      <p>ใช้ผลสอบจริงเพื่อวิเคราะห์ช่องว่างและ Section risk ได้แม่นขึ้น</p>
+      <form id="resultForm">
         <div class="form-grid">
-          <div class="form-group"><label for="mockDate">วันที่ทำ</label><input type="date" id="mockDate" required></div>
-          <div class="form-group"><label for="mockLang">Language Knowledge + Reading (0–120)</label><input type="number" id="mockLang" min="0" max="120" required></div>
-          <div class="form-group"><label for="mockListen">Listening (0–60)</label><input type="number" id="mockListen" min="0" max="60" required></div>
-          <div class="form-group"><label for="mockNote">หมายเหตุ</label><textarea id="mockNote" rows="2" placeholder="เช่น ศัพท์ช้า / ฟังตัวเลขพลาด"></textarea></div>
+          <div class="form-group"><label for="resultLevel">ระดับที่สอบ</label><select id="resultLevel"><option>N5</option><option>N4</option><option>N3</option><option>N2</option><option>N1</option></select></div>
+          <div class="form-group"><label for="resultDate">วันที่/เดือนที่สอบ</label><input type="date" id="resultDate"></div>
+          <div id="resultScoreFields" class="form-grid nested-grid"></div>
+          <div class="reference-grid"><div class="form-group"><label for="resultRefVocab">Vocabulary</label><select id="resultRefVocab"><option value="U">ไม่ทราบ</option><option>A</option><option>B</option><option>C</option></select></div><div class="form-group"><label for="resultRefGrammar">Grammar</label><select id="resultRefGrammar"><option value="U">ไม่ทราบ</option><option>A</option><option>B</option><option>C</option></select></div><div class="form-group"><label for="resultRefReading">Reading</label><select id="resultRefReading"><option value="U">ไม่ทราบ</option><option>A</option><option>B</option><option>C</option></select></div></div>
+          <div class="form-group"><label for="resultNote">หมายเหตุ</label><textarea id="resultNote" rows="2" placeholder="เช่น ไม่ผ่านเพราะคะแนนรวม / ผ่านแล้วกำลังขยับระดับ"></textarea></div>
         </div>
-        <div class="modal-actions"><button type="button" class="ghost-btn" data-close-modal="mockModal">ยกเลิก</button><button type="submit" class="primary-btn">บันทึกคะแนน</button></div>
+        <div class="modal-actions"><button type="button" class="ghost-btn" data-close-modal="resultModal">ยกเลิก</button><button type="submit" class="primary-btn">บันทึกผลสอบ</button></div>
       </form>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="wordModal" role="dialog" aria-modal="true" aria-labelledby="wordModalTitle">
-    <div class="modal" id="wordModalBody"></div>
-  </div>
+  <div class="modal-backdrop" id="wordModal" role="dialog" aria-modal="true" aria-labelledby="wordModalTitle"><div class="modal" id="wordModalBody"></div></div>
 
   <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle">
     <div class="onboarding-inner">
+      <div class="onboarding-topline"><button type="button" class="onboarding-close hidden" id="onboardingCloseBtn" aria-label="ปิด">✕</button><div class="step-dots" id="stepDots"><i class="active"></i><i></i><i></i><i></i></div></div>
       <div class="onboarding-logo" data-mascot="celebrate" aria-hidden="true"></div>
-      <h1 id="onboardingTitle">ยินดีต้อนรับกลับสู่ N4</h1>
-      <p class="onboarding-lead">ครั้งนี้ไม่เริ่มใหม่ทั้งหมด เราจะใช้คะแนนจริงของคุณหา “จุดคุ้มที่สุด” และค่อย ๆ เติมทุกวันจนถึงวันสอบ</p>
-      <article class="profile-card card">
-        <strong>พื้นฐานที่ใช้วางแผน</strong>
-        <div class="profile-score-row">
-          <div class="profile-score"><strong>75/180</strong><span>N4 ล่าสุด</span></div>
-          <div class="profile-score"><strong>51/120</strong><span>ภาษา + อ่าน</span></div>
-          <div class="profile-score"><strong>24/60</strong><span>การฟัง</span></div>
-        </div>
-        <div class="badge-row"><span class="level-badge b">Vocabulary B</span><span class="level-badge a">Grammar A</span><span class="level-badge b">Reading B</span></div>
-        <div class="baseline-note">✅ N5 ผ่านแล้ว 96/180 · A/A/A — ใช้เป็นฐาน ไม่ย้อนเริ่มใหม่ทั้งหมด</div>
-      </article>
-      <div class="section-title-row"><h3>เลือกเวลาที่ทำได้จริงในวันทำงาน</h3></div>
-      <div class="onboarding-options" id="onboardingGoals">
-        <label class="goal-choice"><input type="radio" name="goal" value="15"><span class="choice-icon">☕</span><span><strong>เบาแต่ต่อเนื่อง</strong><small>ศัพท์ 2 คำ + ทบทวน + Micro skill</small></span><em>15 นาที</em></label>
-        <label class="goal-choice selected"><input type="radio" name="goal" value="25" checked><span class="choice-icon">🌱</span><span><strong>สมดุลสำหรับวัยทำงาน</strong><small>ศัพท์ 3 คำ + SRS + Reading/Listening</small></span><em>25 นาที</em></label>
-        <label class="goal-choice"><input type="radio" name="goal" value="40"><span class="choice-icon">🚀</span><span><strong>เร่งคะแนน</strong><small>ศัพท์ 5 คำ + แบบฝึกเพิ่ม + ทบทวนมากขึ้น</small></span><em>40 นาที</em></label>
-      </div>
-      <button type="button" class="primary-btn full" id="finishOnboardingBtn">เริ่มแผนส่วนตัวของฉัน</button>
+      <h1 id="onboardingTitle">สร้างโค้ช JLPT ส่วนตัว</h1>
+      <p class="onboarding-lead" id="onboardingLead">เลือกเป้าหมายและใส่ข้อมูลจริง ระบบจะไม่บังคับให้ทุกคนเรียนเหมือนกัน</p>
+
+      <form id="onboardingForm" novalidate>
+        <section class="onboarding-step active" data-step="1">
+          <article class="profile-card card">
+            <span class="eyebrow-mini">STEP 1 / 4</span><h2>เป้าหมายของคุณ</h2>
+            <div class="form-group"><label for="onboardingName">ชื่อที่ให้โค้ชเรียก</label><input type="text" id="onboardingName" maxlength="30" placeholder="เช่น Patipat"></div>
+            <div class="form-group"><label>ระดับ JLPT เป้าหมาย</label><div class="level-picker" id="targetLevelPicker"><button type="button" data-target-level="N5">N5<small>พื้นฐาน</small></button><button type="button" data-target-level="N4" class="selected">N4<small>Basic+</small></button><button type="button" data-target-level="N3">N3<small>Intermediate</small></button><button type="button" data-target-level="N2">N2<small>Upper</small></button><button type="button" data-target-level="N1">N1<small>Advanced</small></button></div></div>
+            <div class="form-group"><label for="onboardingExamDate">วันสอบเป้าหมาย</label><input type="date" id="onboardingExamDate" value="2026-12-06"><small class="field-help">แก้ไขได้ภายหลัง และควรยืนยันวันจริงจากผู้จัดสอบในประเทศของคุณ</small></div>
+          </article>
+        </section>
+
+        <section class="onboarding-step" data-step="2">
+          <article class="profile-card card">
+            <span class="eyebrow-mini">STEP 2 / 4</span><h2>คะแนนล่าสุด</h2>
+            <label class="toggle-card"><input type="checkbox" id="hasPreviousScore" checked><span class="toggle-icon">📊</span><span><strong>ฉันมีผลสอบหรือ Mock Test</strong><small>ช่วยวิเคราะห์ Score gap และ Section risk</small></span></label>
+            <div id="onboardingScoreArea">
+              <div class="form-group"><label for="previousLevelSelect">ระดับของคะแนนชุดนี้</label><select id="previousLevelSelect"><option>N5</option><option selected>N4</option><option>N3</option><option>N2</option><option>N1</option></select></div>
+              <div id="onboardingScoreFields" class="form-grid nested-grid"></div>
+              <div class="score-live-summary" id="onboardingScoreSummary">กรอกคะแนนแต่ละ Section</div>
+              <div class="reference-grid"><div class="form-group"><label for="onboardingRefVocab">Vocabulary</label><select id="onboardingRefVocab"><option value="U">ไม่ทราบ</option><option>A</option><option>B</option><option>C</option></select></div><div class="form-group"><label for="onboardingRefGrammar">Grammar</label><select id="onboardingRefGrammar"><option value="U">ไม่ทราบ</option><option>A</option><option>B</option><option>C</option></select></div><div class="form-group"><label for="onboardingRefReading">Reading</label><select id="onboardingRefReading"><option value="U">ไม่ทราบ</option><option>A</option><option>B</option><option>C</option></select></div></div>
+              <small class="field-help">A/B/C เป็น Reference Information ไม่ใช่คะแนน Scaled Score โดยตรง</small>
+            </div>
+            <div class="no-score-note hidden" id="noScoreNote">ไม่มีปัญหา ระบบจะเริ่มจาก Self-assessment และค่อยปรับจากคำตอบจริงในแอป</div>
+          </article>
+        </section>
+
+        <section class="onboarding-step" data-step="3">
+          <article class="profile-card card">
+            <span class="eyebrow-mini">STEP 3 / 4</span><h2>จุดอ่อนและเวลาที่ทำได้จริง</h2>
+            <div class="form-group"><label>เรื่องที่รู้สึกว่าอ่อน (เลือกได้หลายข้อ)</label><div class="chip-grid" id="weaknessPicker"><label><input type="checkbox" value="vocab"><span>🧠 Vocabulary</span></label><label><input type="checkbox" value="kanji"><span>🈶 Kanji</span></label><label><input type="checkbox" value="grammar"><span>🧩 Grammar</span></label><label><input type="checkbox" value="reading"><span>📖 Reading</span></label><label><input type="checkbox" value="listening"><span>🎧 Listening</span></label><label><input type="checkbox" value="speed"><span>⏱️ ความเร็ว</span></label></div></div>
+            <div class="form-group"><label>เวลาเรียนในวันทำงาน</label><div class="onboarding-options compact-options" id="onboardingGoals"><label class="goal-choice"><input type="radio" name="goal" value="10"><span class="choice-icon">⚡</span><span><strong>Quick</strong><small>วันยุ่งก็รักษา Streak</small></span><em>10 นาที</em></label><label class="goal-choice"><input type="radio" name="goal" value="15"><span class="choice-icon">☕</span><span><strong>Light</strong><small>สั้นแต่ต่อเนื่อง</small></span><em>15 นาที</em></label><label class="goal-choice selected"><input type="radio" name="goal" value="25" checked><span class="choice-icon">🌱</span><span><strong>Balanced</strong><small>เหมาะกับวัยทำงาน</small></span><em>25 นาที</em></label><label class="goal-choice"><input type="radio" name="goal" value="40"><span class="choice-icon">🚀</span><span><strong>Intensive</strong><small>เร่งคะแนนเป็นระบบ</small></span><em>40 นาที</em></label></div></div>
+            <div class="form-group"><label for="onboardingReminder">เวลาเตือน</label><input type="time" id="onboardingReminder" value="20:30"></div>
+          </article>
+        </section>
+
+        <section class="onboarding-step" data-step="4">
+          <article class="analysis-preview card" id="onboardingAnalysis"><div class="analysis-loading">กำลังวิเคราะห์แผน…</div></article>
+          <div class="privacy-note">🔒 Progress จะบันทึกอัตโนมัติในเครื่องนี้ด้วย Local Storage ไม่มี Login และคนละเครื่องจะไม่ใช้ Save ร่วมกัน</div>
+        </section>
+
+        <div class="onboarding-actions"><button type="button" class="ghost-btn" id="onboardingBackBtn">ย้อนกลับ</button><button type="button" class="primary-btn" id="onboardingNextBtn">ถัดไป</button><button type="submit" class="primary-btn hidden" id="finishOnboardingBtn">เริ่มแผนของฉัน</button></div>
+      </form>
     </div>
   </section>
 

@@ -1,36 +1,17 @@
 {
-  "id": "./",
-  "name": "N4 Sprint — JLPT N4 Daily Coach",
-  "short_name": "N4 Sprint",
-  "description": "แอปฝึก JLPT N4 แบบออฟไลน์ ปรับตามคะแนน Vocabulary B, Grammar A, Reading B",
-  "lang": "th",
-  "dir": "ltr",
-  "start_url": "./index.html",
+  "name": "JLPT Coach N5–N1",
+  "short_name": "JLPT Coach",
+  "description": "Adaptive JLPT study coach for N5 to N1 with score-based planning, SRS, mistakes and offline progress.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "orientation": "portrait-primary",
-  "background_color": "#f7fbfa",
+  "background_color": "#f5fbf9",
   "theme_color": "#35b79d",
-  "categories": ["education", "productivity"],
+  "orientation": "portrait-primary",
+  "lang": "th",
   "icons": [
-    {
-      "src": "assets/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    {"src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
