@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 3,
+  "coreCompatibility": "V2.2.0 fields preserved; additional fields are optional and ignored by old UI.",
+  "grammarNodeRequired": [
+    "id",
+    "level",
+    "pattern",
+    "th",
+    "formation",
+    "example",
+    "exampleTh",
+    "question",
+    "options",
+    "answer",
+    "why"
+  ],
+  "newOptionalGrammarFields": [
+    "functionId",
+    "quickCard",
+    "deepExplain",
+    "contrastGroupIds",
+    "commonErrorsTh",
+    "memoryHintTh",
+    "questionTypes",
+    "errorCodes",
+    "rightsStatus",
+    "contentStatus",
+    "sourceRefs"
+  ],
+  "readingRequired": [
+    "id",
+    "level",
+    "title",
+    "text",
+    "question",
+    "options",
+    "answer",
+    "explanation"
+  ],
+  "listeningRequired": [
+    "id",
+    "level",
+    "title",
+    "script",
+    "question",
+    "options",
+    "answer",
+    "explanation"
+  ],
+  "newListeningFields": [
+    "turns",
+    "speakers",
+    "speakerCount",
+    "listeningType",
+    "questionType",
+    "errorCodes"
+  ],
+  "practiceQuestionRequired": [
+    "id",
+    "level",
+    "skill",
+    "questionType",
+    "prompt",
+    "options",
+    "answer",
+    "explanationTh",
+    "errorCodes"
+  ]
+}

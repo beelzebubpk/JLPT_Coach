@@ -1,5 +1,5 @@
 /*
- * JLPT Coach V2.1 — licensed content normalizer and coverage builder.
+ * JLPT Coach V2.3 — licensed content normalizer and coverage builder.
  * The engine is intentionally independent from the UI so future content packs can be
  * replaced without rewriting the adaptive-learning application.
  */
@@ -358,9 +358,9 @@
 
     base.meta = {
       ...(base.meta || {}),
-      version: '2.1.1',
+      version: base.meta?.version || '2.3.0',
       buildDate: new Date().toISOString().slice(0, 10),
-      contentNoteTh: 'คลังคำศัพท์และคันจิแบบประมาณการจากชุดข้อมูลเปิด ไม่ใช่รายการทางการของ JLPT และไม่มีการคัดลอกข้อสอบจริงย้อนหลัง',
+      contentNoteTh: base.meta?.contentNoteTh || 'คลังคำศัพท์และคันจิแบบประมาณการจากชุดข้อมูลเปิด ไม่ใช่รายการทางการของ JLPT และไม่มีการคัดลอกข้อสอบจริงย้อนหลัง',
       contentSync: {
         version: config.version,
         generatedAt: new Date().toISOString(),

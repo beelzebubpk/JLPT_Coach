@@ -1,0 +1,82 @@
+{
+  "release": "2.3.0",
+  "viewport": "390x844",
+  "tests": [
+    {
+      "name": "Application boot",
+      "status": "PASS",
+      "detail": "Bundled content, Dialogue Engine and Textbook Engine loaded"
+    },
+    {
+      "name": "Dynamic N4 score form",
+      "status": "PASS",
+      "detail": "N4 · 75/180 · ขาด 15 คะแนนจากเกณฑ์รวม · ✓ ภาษา (คำศัพท์/ไวยากรณ์) + การอ่าน 51/120 · ✓ การฟัง 24/60"
+    },
+    {
+      "name": "Adaptive onboarding analysis",
+      "status": "PASS",
+      "detail": "N4 · STEP 4 / 4 · แผนที่ระบบเสนอ · Patipat Test · Foundation Repair ·  · สร้างคลังคำและซ่อมพื้นฐานที่ขาด ·  · 97 · วันถึงสอบ · 25 นาที · เวลา/วัน · 90/180 · เกณฑ์ผ่าน · 15 คะแนน · Score gap · 🧠 · Priority แรก · Vocabulary / Kanji ·  · คุณระบุว่าเป็นจุดอ่อน และข้อมูลระบบยังสนับสนุนให้เพิ่มเวลา ·  · 🧠 Vocabulary / Kanji · 30% · 🧩 Grammar · 18% · 📖 Reading · 22% · 🎧 Listening · 30% ·  · ระบบจะคำนวณใหม่หลังทุกบทเรียนจาก Accuracy, Response time, SRS, Mistake Log และ Mock Test"
+    },
+    {
+      "name": "Home readiness rendering",
+      "status": "PASS",
+      "detail": "N4 result and adaptive home rendered"
+    },
+    {
+      "name": "Textbook learning page",
+      "status": "PASS",
+      "detail": "10 stages · 11 question types · 1 topic paths"
+    },
+    {
+      "name": "Question Lab grading",
+      "status": "PASS",
+      "detail": "vocab_kanji_reading · feedback and subtype save completed"
+    },
+    {
+      "name": "Learning Path study card",
+      "status": "PASS",
+      "detail": "Quick Card rendered · deep explain blocks: 1"
+    },
+    {
+      "name": "Multi-voice listening flow",
+      "status": "PASS",
+      "detail": "card1:2 speakers/2 lines · transcript gate passed"
+    },
+    {
+      "name": "Subtype analytics and Mock Ladder",
+      "status": "PASS",
+      "detail": "analytics rendered · 10 stages"
+    },
+    {
+      "name": "Textbook Engine status",
+      "status": "PASS",
+      "detail": "พร้อมใช้งาน · Schema 3 · N5 / N4 / N3 · 17 Question types · 35 Error codes · 16 Contrast groups · 267 Practice questions"
+    },
+    {
+      "name": "Local save schema",
+      "status": "PASS",
+      "detail": "Schema 3 · subtype attempts 2 · XP 4"
+    },
+    {
+      "name": "Auto-save persistence",
+      "status": "PASS",
+      "detail": "Profile, scores, subtype stats and XP restored in a new document"
+    },
+    {
+      "name": "Runtime page errors",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "Console errors",
+      "status": "PASS",
+      "detail": "0"
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "warnings": [],
+  "test_environment_note": "Browser UI flow uses bundled content and an in-memory localStorage polyfill because administrator policy blocks local/HTTP navigation in the test container.",
+  "passed": 14,
+  "failed": 0
+}

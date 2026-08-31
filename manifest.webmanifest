@@ -1,7 +1,7 @@
 {
   "name": "JLPT Coach N5–N1",
   "short_name": "JLPT Coach",
-  "description": "Adaptive JLPT coach for N5–N1 with SRS, local save, licensed content sync, and multi-voice listening by speaker.",
+  "description": "Adaptive JLPT coach N5–N1 with Textbook Learning Paths, Error Analytics, SRS, licensed content sync, and multi-voice listening.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

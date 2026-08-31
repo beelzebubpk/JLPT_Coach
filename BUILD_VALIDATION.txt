@@ -1,45 +1,49 @@
-JLPT Coach V2.2.0 Build Validation
+JLPT Coach V2.3.0 Build Validation
 Date: 2026-08-31
 
-Checks completed:
-- JavaScript syntax: PASS
-  app.js
-  dialogue-engine.js
-  content-config.js
-  content-engine.js
-  content-loader.js
-  sw.js
-- JSON validation: PASS
-  content.json
-  manifest.webmanifest
-  CONTENT_SOURCES.json
-- Dialogue parser: PASS
-  single-speaker announcement
-  two-speaker conversation
-  three-speaker conversation
-- Voice assignment: PASS
-  distinct Japanese voices when 2+ voices are available
-  distinct Pitch/Rate fallback when only one Japanese voice is available
-- Mobile UI test at 390 x 844: PASS
-- Listening flow: PASS
-  play all
-  slow playback
-  stop
-  speaker highlight
-  answer grading
-  transcript reveal
-  line replay binding
-- Browser flow page errors: NONE in tested path
-- Local progress compatibility: PASS
-  Storage key remains jlpt-coach-state-v2
-- App-shell cache includes dialogue-engine.js: PASS
+PASS: vocab unique IDs (340)
+PASS: grammar unique IDs (143)
+PASS: readings unique IDs (62)
+PASS: listenings unique IDs (62)
+PASS: practiceQuestions unique IDs (267)
+PASS: grammar answer/options integrity
+PASS: readings answer/options integrity
+PASS: listenings answer/options integrity
+PASS: practiceQuestions answer/options integrity
+PASS: listening speaker metadata consistency
+PASS: rightsStatus present on structured learning items
 
-Expected cumulative lexical coverage after successful licensed-content sync:
-N5: 800 Vocabulary / 100 Kanji
-N4: 1,500 Vocabulary / 300 Kanji
-N3: 3,750 Vocabulary / 650 Kanji
-N2: 6,000 Vocabulary / 1,000 Kanji
-N1: 10,000 Vocabulary / 2,000 Kanji
+Content counts:
+- Vocabulary starter: 340
+- Grammar: 143
+- Reading: 62
+- Listening: 62
+- Practice questions: 267
+- Question blueprints: 17
+- Error codes: 35
+- Contrast groups: 16
 
-Platform note:
-The actual voice names and number of Japanese voices depend on iOS and installed system voices. The app uses Pitch/Rate separation when only one voice is exposed by the browser.
+Runtime validation is recorded separately after browser-flow tests.
+
+Browser runtime flow:
+PASS: 14/14 checks at mobile viewport 390x844
+PASS: Application boot — Bundled content, Dialogue Engine and Textbook Engine loaded
+PASS: Dynamic N4 score form — N4 · 75/180 · ขาด 15 คะแนนจากเกณฑ์รวม · ✓ ภาษา (คำศัพท์/ไวยากรณ์) + การอ่าน 51/120 · ✓ การฟัง 24/60
+PASS: Adaptive onboarding analysis — N4 · STEP 4 / 4 · แผนที่ระบบเสนอ · Patipat Test · Foundation Repair ·  · สร้างคลังคำและซ่อมพื้นฐานที่ขาด ·  · 97 · วันถึงสอบ · 25 นาที · เวลา/วัน · 90/180 · เกณฑ์ผ่าน · 15 คะแนน · Score gap · 🧠 · Priority แรก · Vocabulary / Kanji ·  · คุณระบุว่าเป็นจุดอ่อน และข้อมูลระบบยังสนับสนุนให้เพิ่มเวลา ·  · 🧠 Vocabulary / Kanji · 30% · 🧩 Grammar · 18% · 📖 Reading · 22% · 🎧 Listening · 30% ·  · ระบบจะคำนวณใหม่หลังทุกบทเรียนจาก Accuracy, Response time, SRS, Mistake Log และ Mock Test
+PASS: Home readiness rendering — N4 result and adaptive home rendered
+PASS: Textbook learning page — 10 stages · 11 question types · 1 topic paths
+PASS: Question Lab grading — vocab_kanji_reading · feedback and subtype save completed
+PASS: Learning Path study card — Quick Card rendered · deep explain blocks: 1
+PASS: Multi-voice listening flow — card1:2 speakers/2 lines · transcript gate passed
+PASS: Subtype analytics and Mock Ladder — analytics rendered · 10 stages
+PASS: Textbook Engine status — พร้อมใช้งาน · Schema 3 · N5 / N4 / N3 · 17 Question types · 35 Error codes · 16 Contrast groups · 267 Practice questions
+PASS: Local save schema — Schema 3 · subtype attempts 2 · XP 4
+PASS: Auto-save persistence — Profile, scores, subtype stats and XP restored in a new document
+PASS: Runtime page errors — 0
+PASS: Console errors — 0
+
+Environment note:
+- Browser UI was tested with bundled V2.3 content and the production JavaScript/CSS files.
+- The container blocks local/HTTP navigation, so browser persistence was verified with a deterministic localStorage-compatible test harness.
+- External open-content network sync and real iOS speech voices must be confirmed once after GitHub Pages deployment on the target iPhone.
+- Service-worker syntax, app-shell file references, manifest JSON, cache version, and all runtime asset paths were validated statically.

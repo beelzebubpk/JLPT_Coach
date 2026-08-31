@@ -1,6 +1,8 @@
-const CACHE_NAME = 'jlpt-coach-v2-2-0-20260831-1';
+const CACHE_NAME = 'jlpt-coach-v2-3-0-20260831-2';
 const APP_SHELL = [
-  './', './index.html', './styles.css?v=2.2.0', './data.js', './content-config.js', './content-engine.js', './content-loader.js', './dialogue-engine.js?v=2.2.0', './app.js?v=2.2.0', './manifest.webmanifest?v=2.2.0',
+  './', './index.html', './styles.css?v=2.3.0', './data.js?v=2.3.0', './content-config.js?v=2.3.0',
+  './content-engine.js?v=2.3.0', './content-loader.js?v=2.3.0', './dialogue-engine.js?v=2.3.0',
+  './textbook-engine.js?v=2.3.0', './app.js?v=2.3.0', './manifest.webmanifest?v=2.3.0',
   './assets/icon-192.png', './assets/icon-512.png', './assets/icon-maskable-512.png'
 ];
 

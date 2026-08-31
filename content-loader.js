@@ -1,5 +1,5 @@
 /*
- * JLPT Coach V2.1 — first-run content sync.
+ * JLPT Coach V2.3 — first-run content sync.
  * Downloads licensed/open vocabulary and kanji data, normalizes it, stores the resulting
  * compact pack in IndexedDB, and reuses that pack offline on later launches.
  */
@@ -305,7 +305,7 @@
         kanjiStudyItems: Array.isArray(BASE_CONTENT.kanjiStudyItems) ? BASE_CONTENT.kanjiStudyItems : [],
         meta: {
           ...(BASE_CONTENT.meta || {}),
-          version: '2.1.1-fallback',
+          version: BASE_CONTENT.meta?.version || '2.3.0-fallback',
           contentSync: {
             version: CONFIG.version,
             generatedAt: new Date().toISOString(),

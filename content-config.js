@@ -1,12 +1,12 @@
-/* JLPT Coach V2.1 content sources and coverage targets.
+/* JLPT Coach V2.3 content sources and coverage targets.
  * This file contains configuration only; no test questions are copied from JLPT exams.
  */
 window.JLPT_CONTENT_CONFIG = Object.freeze({
-  version: '2.1.1-20260828-1',
+  version: '2.3.0-20260831-1',
   cache: {
-    dbName: 'jlpt-coach-content-v2-1',
+    dbName: 'jlpt-coach-content-v2-3',
     storeName: 'packs',
-    key: 'licensed-content-2.1.1-20260828-1',
+    key: 'licensed-content-2.3.0-20260831-1',
   },
   networkTimeoutMs: 30000,
   levels: ['N5', 'N4', 'N3', 'N2', 'N1'],

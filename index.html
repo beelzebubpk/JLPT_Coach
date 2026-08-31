@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#35b79d">
-  <meta name="description" content="JLPT Coach N5–N1: Adaptive learning, SRS และบทสนทนา Multi-Voice แยกผู้พูด">
+  <meta name="description" content="JLPT Coach N5–N1: Adaptive learning, Textbook Learning Path, Error Analytics, SRS และ Multi-Voice">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="JLPT Coach">
-  <title>JLPT Coach — N5 to N1</title>
-  <link rel="manifest" href="manifest.webmanifest?v=2.2.0">
+  <title>JLPT Coach V2.3 — N5 to N1</title>
+  <link rel="manifest" href="manifest.webmanifest?v=2.3.0">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=2.2.0">
+  <link rel="stylesheet" href="styles.css?v=2.3.0">
 </head>
 <body>
   <div class="content-boot" id="contentBootOverlay" role="status" aria-live="polite">
@@ -120,6 +120,12 @@
           <div class="summary-tile"><strong id="accuracyCount">—</strong><span>ความแม่นยำศัพท์</span></div>
         </div>
 
+        <div class="section-title-row textbook-section-title">
+          <div><h3>เส้นทางเรียนจาก Textbook</h3><span class="section-note">Quick Card → แบบฝึก → เชื่อมทักษะ</span></div>
+          <span class="textbook-badge">V2.3</span>
+        </div>
+        <div class="learning-path-list" id="learningPathList"></div>
+
         <div class="mode-grid">
           <button class="mode-card featured-mode" type="button" data-mode="mixed"><span class="mode-icon">🎯</span><strong>Adaptive Mix</strong><small>ผสมทักษะตามน้ำหนักแผนปัจจุบัน</small></button>
           <button class="mode-card" type="button" data-mode="vocab"><span class="mode-icon">🧠</span><strong>Vocabulary / Kanji</strong><small>คำใหม่ คำอ่าน บริบท และ SRS</small></button>
@@ -129,7 +135,13 @@
           <button class="mode-card" type="button" data-mode="grammar"><span class="mode-icon">🧩</span><strong>Grammar Tune-up</strong><small>ฝึก Pattern และตัวเลือกที่สับสน</small></button>
         </div>
 
-        <div class="section-title-row"><h3>คลังหัวข้อระดับปัจจุบัน</h3><span class="section-note" id="contentCountLabel"></span></div>
+        <div class="section-title-row"><div><h3>Question Lab</h3><span class="section-note">เลือกชนิดโจทย์ที่ต้องการซ่อมโดยตรง</span></div></div>
+        <div class="question-lab-grid" id="questionLabGrid"></div>
+
+        <div class="section-title-row"><h3>หัวข้อตาม Textbook</h3><span class="section-note" id="topicCoverageLabel"></span></div>
+        <div class="topic-path-list" id="topicPathList"></div>
+
+        <div class="section-title-row"><h3>คลังหัวข้อเดิม</h3><span class="section-note" id="contentCountLabel"></span></div>
         <div class="theme-list" id="themeList"></div>
       </section>
 
@@ -164,6 +176,9 @@
         <div class="section-title-row"><h3>ความแม่นยำแยกทักษะ</h3></div>
         <article class="skill-bars card" id="skillBars"></article>
 
+        <div class="section-title-row"><h3>จุดอ่อนรายประเภท</h3><span class="section-note">Question type + สาเหตุที่ผิด</span></div>
+        <article class="subtype-card card" id="subtypeWeaknessList"></article>
+
         <div class="section-title-row"><h3>น้ำหนักแผนล่าสุด</h3><span class="section-note">ปรับหลังตอบคำถาม</span></div>
         <article class="skill-bars card" id="progressWeightBars"></article>
 
@@ -172,6 +187,9 @@
           <div class="score-ring" id="progressScoreRing"><div class="score-ring-inner"><strong id="progressProjectedScore">—</strong><span>/ 180</span></div></div>
           <div class="score-copy"><span class="readiness-chip" id="progressReadinessChip">Diagnostic</span><h3 id="progressScoreText">เพิ่มผลสอบหรือ Mock เพื่อเริ่มวิเคราะห์</h3><p id="progressScoreDetail">ระบบจะตรวจทั้งคะแนนรวมและ Section minimum</p></div>
         </article>
+
+        <div class="section-title-row"><div><h3>Mock Ladder 10 ขั้น</h3><span class="section-note">จาก Diagnostic ถึง Readiness Mock</span></div></div>
+        <div class="mock-ladder-list" id="mockLadderList"></div>
 
         <div class="section-title-row"><h3>ประวัติ Mock Test</h3></div>
         <div class="mock-list" id="mockList"></div>
@@ -215,6 +233,13 @@
           <div class="setting-row content-info-row"><div><div class="setting-title">ที่มาและสัญญาอนุญาต</div><div class="setting-desc" id="contentLicenseNote">OpenJLPT / WordMaster / Open Anki JLPT</div></div></div>
         </article>
 
+        <div class="section-title-row"><h3>Textbook Learning Engine</h3><span class="section-note">Original rewrite only</span></div>
+        <article class="settings-card card">
+          <div class="setting-row content-info-row"><div><div class="setting-title">สถานะ Engine</div><div class="setting-desc content-status complete" id="textbookEngineStatus">กำลังตรวจสอบ…</div></div></div>
+          <div class="setting-row content-info-row"><div><div class="setting-title">Coverage</div><div class="setting-desc" id="textbookEngineCounts">—</div></div></div>
+          <div class="setting-row content-info-row"><div><div class="setting-title">หลักการใช้แหล่งอ้างอิง</div><div class="setting-desc">ใช้โครงสร้างหัวข้อ ชนิดโจทย์ และแนวการสอนจากเอกสารที่ให้มา แต่โจทย์ ประโยค บทอ่าน และบทสนทนาในแอปเป็นงานเขียนใหม่</div></div></div>
+        </article>
+
         <div class="section-title-row"><h3>สำรองข้อมูล</h3></div>
         <article class="settings-card card">
           <div class="setting-row"><div><div class="setting-title">Export progress</div><div class="setting-desc">สำรอง Profile, SRS, ข้อผิด และคะแนน</div></div><button type="button" class="ghost-btn small-btn" id="exportBtn">Export</button></div>
@@ -222,8 +247,8 @@
           <div class="setting-row"><div><div class="setting-title">เริ่มใหม่ทั้งหมด</div><div class="setting-desc">ลบข้อมูล Local ของแอปนี้ในเครื่อง</div></div><button type="button" class="danger-btn small-btn" id="resetBtn">Reset</button></div>
         </article>
 
-        <div class="section-title-row"><h3>เกี่ยวกับ Version 2.2.0</h3></div>
-        <article class="card about-note" id="aboutNote">รองรับ N5–N1, Adaptive Plan, SRS, Mistake Log, Local Save, Licensed Content Sync และ Multi-Voice Listening ที่แยกเสียงตามผู้พูด พร้อม Transcript รายบรรทัด โดยไม่คัดลอกข้อสอบจริง ข้อมูลของคนละเครื่องจะแยกจากกัน</article>
+        <div class="section-title-row"><h3>เกี่ยวกับ Version 2.3.0</h3></div>
+        <article class="card about-note" id="aboutNote">เพิ่ม Textbook Learning Path, Grammar Quick/Deep Explain, Question Lab, Error Taxonomy, Weak-subtype Analytics, Mock Ladder 10 ขั้น และ Adaptive selection ตามสาเหตุที่ผิด พร้อมคง Multi-Voice Listening, SRS, Local Save และ Licensed Content Sync โดยไม่ฝังหน้าสแกนหรือคัดลอกข้อสอบเดิม</article>
       </section>
     </main>
 
@@ -244,7 +269,7 @@
         <div class="lesson-energy" id="lessonEnergy">💚 5</div>
       </header>
       <main class="lesson-main" id="lessonMain"></main>
-      <footer class="lesson-footer" id="lessonFooter"><div class="feedback-panel" id="feedbackPanel"><h3 class="feedback-title" id="feedbackTitle"></h3><p class="feedback-text" id="feedbackText"></p></div><button type="button" class="primary-btn full" id="lessonActionBtn">ตรวจคำตอบ</button></footer>
+      <footer class="lesson-footer" id="lessonFooter"><div class="feedback-panel" id="feedbackPanel"><h3 class="feedback-title" id="feedbackTitle"></h3><p class="feedback-text" id="feedbackText"></p><div class="feedback-details" id="feedbackDetails"></div></div><button type="button" class="primary-btn full" id="lessonActionBtn">ตรวจคำตอบ</button></footer>
     </div>
   </section>
 
@@ -329,11 +354,12 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="confetti hidden" id="confetti" aria-hidden="true"></div>
 
-  <script src="data.js"></script>
-  <script src="content-config.js"></script>
-  <script src="content-engine.js"></script>
-  <script src="content-loader.js"></script>
-  <script src="dialogue-engine.js?v=2.2.0"></script>
-  <script src="app.js?v=2.2.0"></script>
+  <script src="data.js?v=2.3.0"></script>
+  <script src="content-config.js?v=2.3.0"></script>
+  <script src="content-engine.js?v=2.3.0"></script>
+  <script src="content-loader.js?v=2.3.0"></script>
+  <script src="dialogue-engine.js?v=2.3.0"></script>
+  <script src="textbook-engine.js?v=2.3.0"></script>
+  <script src="app.js?v=2.3.0"></script>
 </body>
 </html>

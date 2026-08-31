@@ -1,30 +1,25 @@
 # Changelog
 
+## 2.3.0 — 2026-08-31
+
+- เปลี่ยน Textbook Data Pack ให้เป็นฟังก์ชันในแอปจริง
+- เพิ่ม Textbook Learning Path: N5 8, N4 10, N3 12 stages
+- เพิ่ม Question Lab 17 ประเภทและ Error Taxonomy 35 รหัส
+- เพิ่ม Grammar Quick Card, Deep Explain, Common Errors และ Contrast Groups 16 กลุ่ม
+- เพิ่ม Topic/Collocation/Transitivity practice และ progress tracking
+- เพิ่ม 10-stage Mock Ladder
+- เพิ่ม subtype accuracy, response-time analytics, retry-by-error และ adaptive weighting รายสาเหตุ
+- เพิ่ม bundled practice questions รวม 267 ข้อ
+- แก้ Dialogue turn metadata จาก script และคง Multi-Voice 1 profile ต่อผู้พูด
+- เปลี่ยน IndexedDB content cache เป็น `licensed-content-2.3.0-20260831-1`
+- เปลี่ยน Service Worker cache เป็น `jlpt-coach-v2-3-0-20260831-2`
+- รักษา Local Storage key `jlpt-coach-state-v2` เพื่อคง Progress เดิม
+- ไม่ฝังหน้าสแกน ภาพหนังสือ หรือคัดลอกชุดข้อสอบเดิม
+
 ## 2.2.0 — 2026-08-31
 
-- เพิ่ม `dialogue-engine.js` สำหรับแยก Script ตามผู้พูดและอ่านทีละ Turn
-- รองรับบทสนทนา 1 คน, 2 คน และหลายคน
-- เลือก Japanese voice คนละเสียงเมื่ออุปกรณ์มีหลายเสียง
-- เพิ่ม Pitch/Rate fallback เมื่ออุปกรณ์มี Japanese voice เพียงเสียงเดียว
-- เพิ่ม Speaker chip และ Highlight คนที่กำลังพูด
-- เพิ่มปุ่มฟังช้าและหยุดเสียง
-- ซ่อน Script ก่อนตอบ และเปิด Transcript แบบแยกผู้พูดหลังตอบ
-- แตะ Transcript รายบรรทัดเพื่อฟังซ้ำเฉพาะประโยคได้
-- เพิ่มการตั้งค่า Multi-Voice, ความเร็ว และปุ่มทดสอบเสียง
-- บันทึกจำนวนรอบฟัง จำนวนผู้พูด และ Listening subtype ลง Mistake Log เมื่อทำผิด
-- เพิ่ม subtype: conversation, announcement, task, key-point และ monologue
-- ปรับ Service Worker app-shell cache เป็น Version 2.2.0
-- รักษา Local Storage key เดิม `jlpt-coach-state-v2` เพื่อไม่ให้ Progress หาย
-- ไม่เพิ่มหรือคัดลอก Script/ข้อสอบจาก Textbook; ใช้รูปแบบข้อสอบเป็น Blueprint เท่านั้น
+- เพิ่ม Multi-Voice Listening, Speaker Highlight, slow replay, transcript reveal, and per-line replay.
 
 ## 2.1.1 — 2026-08-28
 
-- เพิ่ม Licensed Content Sync สำหรับ Vocabulary/Kanji N5–N1
-- เพิ่ม OpenJLPT, WordMaster Word Lists และ Open Anki JLPT Decks
-- รองรับ JSON และ CSV source
-- เพิ่ม Merge, Deduplicate, Stable ID และ Cumulative coverage target
-- เพิ่ม IndexedDB cache และ Offline fallback
-- เพิ่มหน้าสถานะ จำนวนจริง เป้าหมาย Error count และ Attribution
-- ปรับ Service Worker cache version
-- ไม่เปลี่ยน Local Storage key จึงรักษา Progress เดิมเมื่อใช้ URL เดิม
-- เพิ่มเอกสาร License และ Source audit
+- เพิ่ม open-licensed Vocabulary/Kanji sync, merge/deduplicate, IndexedDB cache, and cumulative targets.

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "policy": "No scanned pages, original illustrations, textbook question sets, answer choices, or bulk Thai translations are embedded.",
+  "statuses": {
+    "reference_only": "ใช้เป็นแผนผัง/โครงสร้างภายใน ห้ามเผยแพร่ข้อความต้นฉบับ",
+    "reference_only_manual_qa_required": "ใช้เป็นข้อมูลอ้างอิงภายในและต้องตรวจด้วยคนก่อนใช้",
+    "original_rewrite": "ข้อความ ตัวอย่าง และโจทย์เขียนใหม่สำหรับ JLPT Coach",
+    "open_license": "ข้อมูลจากแหล่งเปิดที่ต้องรักษาเงื่อนไขใบอนุญาต"
+  },
+  "sources": [
+    {
+      "sourceId": "n5_mock_book",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n4_mock_book",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n5_grammar_summary",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n4_grammar_summary",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n4_question_examples",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n3_grammar_summary",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n3_grammar_slides",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n3_vocab_topics",
+      "rightsStatus": "reference_only",
+      "publicDistribution": "metadata_only"
+    },
+    {
+      "sourceId": "n3_kanji_reference",
+      "rightsStatus": "reference_only_manual_qa_required",
+      "publicDistribution": "metadata_only"
+    }
+  ]
+}

@@ -7,14 +7,19 @@
     return;
   }
   const DIALOGUE = window.JLPTDialogueEngine;
+  const TEXTBOOK = window.JLPTTextbookEngine;
   if (!DIALOGUE) {
     document.body.innerHTML = '<p style="padding:24px">ไม่พบ Dialogue Engine กรุณาอัปโหลด dialogue-engine.js พร้อมไฟล์แอป</p>';
+    return;
+  }
+  if (!TEXTBOOK) {
+    document.body.innerHTML = '<p style="padding:24px">ไม่พบ Textbook Learning Engine กรุณาอัปโหลด textbook-engine.js พร้อมไฟล์แอป</p>';
     return;
   }
 
   const STORAGE_KEY = 'jlpt-coach-state-v2';
   const LEGACY_KEY = 'n4-sprint-state-v1';
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
   const DAY_MS = 86400000;
   const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
   const LEVEL_RANK = Object.fromEntries(LEVELS.map((level, index) => [level, index + 1]));
@@ -41,6 +46,9 @@
   ];
 
   const STUDY_ITEMS = [...(CONTENT.vocab || []), ...(CONTENT.kanjiStudyItems || [])];
+  const PRACTICE_QUESTIONS = Array.isArray(CONTENT.practiceQuestions) ? CONTENT.practiceQuestions : [];
+  const TEXTBOOK_PACK = CONTENT.textbookPack || {};
+  const QUESTION_BY_ID = new Map(PRACTICE_QUESTIONS.map((item) => [item.id, item]));
   const VOCAB_BY_ID = new Map(STUDY_ITEMS.map((item) => [item.id, item]));
   const GRAMMAR_BY_ID = new Map(CONTENT.grammar.map((item) => [item.id, item]));
   const READING_BY_ID = new Map(CONTENT.readings.map((item) => [item.id, item]));
@@ -72,6 +80,22 @@
     return Object.fromEntries(LEVELS.map((level) => [level, blankStats()]));
   }
 
+  function defaultSubtypeStatsByLevel() {
+    return Object.fromEntries(LEVELS.map((level) => [level, { questionTypes: {}, errorCodes: {} }]));
+  }
+
+  function normalizeSubtypeStatsByLevel(saved) {
+    const base = defaultSubtypeStatsByLevel();
+    LEVELS.forEach((level) => {
+      const source = saved?.[level] || {};
+      base[level] = {
+        questionTypes: source.questionTypes && typeof source.questionTypes === 'object' ? source.questionTypes : {},
+        errorCodes: source.errorCodes && typeof source.errorCodes === 'object' ? source.errorCodes : {},
+      };
+    });
+    return base;
+  }
+
   function defaultState() {
     return {
       schemaVersion: SCHEMA_VERSION,
@@ -96,9 +120,14 @@
       completedDates: {},
       srs: {},
       statsByLevel: defaultStatsByLevel(),
+      subtypeStatsByLevel: defaultSubtypeStatsByLevel(),
       mistakes: [],
       mockScores: [],
       lessonHistory: [],
+      pathProgress: {},
+      mockLadderProgress: {},
+      topicSessionHistory: [],
+      contentSchemaVersionSeen: Number(CONTENT.meta?.contentSchemaVersion || 1),
       lastReminderDate: null,
       migratedFromV1: false,
     };
@@ -193,9 +222,14 @@
         completedDates: saved.completedDates || {},
         srs: saved.srs || {},
         statsByLevel: normalizeStatsByLevel(saved.statsByLevel),
+        subtypeStatsByLevel: normalizeSubtypeStatsByLevel(saved.subtypeStatsByLevel),
         mistakes: Array.isArray(saved.mistakes) ? saved.mistakes : [],
         mockScores: Array.isArray(saved.mockScores) ? saved.mockScores : [],
         lessonHistory: Array.isArray(saved.lessonHistory) ? saved.lessonHistory : [],
+        pathProgress: saved.pathProgress && typeof saved.pathProgress === 'object' ? saved.pathProgress : {},
+        mockLadderProgress: saved.mockLadderProgress && typeof saved.mockLadderProgress === 'object' ? saved.mockLadderProgress : {},
+        topicSessionHistory: Array.isArray(saved.topicSessionHistory) ? saved.topicSessionHistory : [],
+        contentSchemaVersionSeen: Number(saved.contentSchemaVersionSeen || CONTENT.meta?.contentSchemaVersion || 1),
       };
     } catch (error) {
       console.warn('Could not load saved state:', error);
@@ -310,6 +344,33 @@
 
   function levelListenings(level = state.profile.targetLevel) {
     return CONTENT.listenings.filter((item) => item.level === level);
+  }
+
+  function levelPracticeQuestions(level = state.profile.targetLevel) {
+    return PRACTICE_QUESTIONS.filter((item) => item.level === level);
+  }
+
+  function questionTypeLabel(id) {
+    return TEXTBOOK.questionLabel(id, CONTENT);
+  }
+
+  function errorCodeLabel(code) {
+    return TEXTBOOK.errorLabel(code, CONTENT);
+  }
+
+  function getSubtypeStats(level = state.profile.targetLevel) {
+    TEXTBOOK.ensureSubtypeLevel(state.subtypeStatsByLevel, level);
+    return state.subtypeStatsByLevel[level];
+  }
+
+  function pathProgress(level = state.profile.targetLevel) {
+    if (!state.pathProgress[level] || typeof state.pathProgress[level] !== 'object') state.pathProgress[level] = {};
+    return state.pathProgress[level];
+  }
+
+  function mockLadderProgress(level = state.profile.targetLevel) {
+    if (!state.mockLadderProgress[level] || typeof state.mockLadderProgress[level] !== 'object') state.mockLadderProgress[level] = {};
+    return state.mockLadderProgress[level];
   }
 
   function getLevelStats(level = state.profile.targetLevel) {
@@ -463,6 +524,22 @@
       if (mistakeCounts[m.skill] != null) mistakeCounts[m.skill] += Number(m.count || 1);
     });
 
+    const analysisState = {
+      ...state,
+      mistakes,
+      subtypeStatsByLevel: options.subtypeStatsByLevel || state.subtypeStatsByLevel,
+    };
+    const weakSubtypes = TEXTBOOK.weakSubtypeRows(level, analysisState, CONTENT, 10);
+    const subtypePressureBySkill = { vocab: 0, grammar: 0, reading: 0, listening: 0 };
+    weakSubtypes.forEach((row) => {
+      let skill = row.kind === 'errorCode' ? TEXTBOOK.errorInfo(row.id, CONTENT).skill : TEXTBOOK.blueprint(row.id, CONTENT)?.skill;
+      if (!skill && row.id.startsWith('VOC_')) skill = 'vocab';
+      if (!skill && row.id.startsWith('GRM_')) skill = 'grammar';
+      if (!skill && row.id.startsWith('READ_')) skill = 'reading';
+      if (!skill && row.id.startsWith('LISTEN_')) skill = 'listening';
+      if (subtypePressureBySkill[skill] != null) subtypePressureBySkill[skill] += Math.min(25, Number(row.pressure || 0));
+    });
+
     const raw = {};
     Object.keys(performance).forEach((skill) => {
       raw[skill] = 0.16 + Math.pow(1 - performance[skill], 1.35);
@@ -470,13 +547,19 @@
       if (skill === 'vocab' && selfWeak.has('kanji')) raw[skill] += 0.22;
       if (selfWeak.has('speed') && ['vocab', 'reading', 'listening'].includes(skill)) raw[skill] += 0.10;
       raw[skill] += Math.min(0.28, mistakeCounts[skill] * 0.018);
+      raw[skill] += Math.min(0.18, subtypePressureBySkill[skill] / 250);
     });
     const weights = allocateWeights(raw);
     const priority = Object.keys(weights).sort((a, b) => weights[b] - weights[a])[0];
     const phase = getPhase(profile);
 
     let priorityReason = 'เป็นทักษะที่มีช่องว่างมากที่สุดจากข้อมูลปัจจุบัน';
-    if (selfWeak.has(priority) || (priority === 'vocab' && selfWeak.has('kanji'))) priorityReason = 'คุณระบุว่าเป็นจุดอ่อน และข้อมูลระบบยังสนับสนุนให้เพิ่มเวลา';
+    const topSubtypeForPriority = weakSubtypes.find((row) => {
+      const info = row.kind === 'errorCode' ? TEXTBOOK.errorInfo(row.id, CONTENT) : TEXTBOOK.blueprint(row.id, CONTENT);
+      return info?.skill === priority;
+    });
+    if (topSubtypeForPriority) priorityReason = `พบจุดอ่อนซ้ำใน “${topSubtypeForPriority.label}” จึงเพิ่มน้ำหนักให้ทักษะนี้`;
+    else if (selfWeak.has(priority) || (priority === 'vocab' && selfWeak.has('kanji'))) priorityReason = 'คุณระบุว่าเป็นจุดอ่อน และข้อมูลระบบยังสนับสนุนให้เพิ่มเวลา';
     else if (sourceResult?.references && ['B', 'C'].includes(sourceResult.references[priority])) priorityReason = `Reference Information ของทักษะนี้อยู่ระดับ ${sourceResult.references[priority]}`;
     else {
       const stat = levelStats[priority];
@@ -490,7 +573,7 @@
       return { ...section, score, margin: score - section.pass, risk: score < section.pass + 5 };
     }) : [];
 
-    return { level, config, sourceResult, sameLevelResult, performance, weights, priority, priorityReason, phase, gapToPass, sectionRisks };
+    return { level, config, sourceResult, sameLevelResult, performance, weights, priority, priorityReason, phase, gapToPass, sectionRisks, weakSubtypes };
   }
 
   function buildPlanCounts(adaptive = computeAdaptivePlan(), minutes = Number(state.profile.dailyMinutes)) {
@@ -669,17 +752,68 @@
       speakText = mode === 'audio' ? `${item.word}。${item.word}。` : item.word;
     }
 
+    const questionType = mode === 'reading'
+      ? 'vocab_kanji_reading'
+      : mode === 'context'
+        ? 'vocab_context_meaning'
+        : (item.questionTypes?.[0] || 'vocab_context_meaning');
+    const errorCodes = mode === 'reading'
+      ? ['VOC_KANJI_READING']
+      : mode === 'context'
+        ? ['VOC_CONTEXT', 'VOC_COLLOCATION']
+        : (item.errorCodes?.length ? item.errorCodes : ['VOC_UNKNOWN_MEANING']);
     return {
       type: 'question', level: state.profile.targetLevel, itemLevel: item.level, skill: 'vocab', subtype: mode, itemId: item.id,
       kicker: `${item.level} · ${mode === 'reading' ? 'KANJI READING' : mode === 'context' ? 'CONTEXT' : mode === 'audio' ? 'LISTEN & CHOOSE' : 'VOCABULARY'}`,
       prompt, hint, options: optionData.options, optionNotes: optionData.notes, answer: optionData.answer,
       speakText,
+      questionType,
+      errorCodes,
+      targetIds: [item.id],
+      topicIds: Array.isArray(item.topicIds) ? item.topicIds : [],
+      estimatedSeconds: TEXTBOOK.estimatedSeconds(questionType, item.level),
       explanation: `${item.word}（${item.reading}）หมายถึง “${item.th}” · ${item.tip} · ตัวอย่าง: ${item.example} (${item.exampleTh})`,
+    };
+  }
+
+  function makeVocabOrthographyQuestion(item, seed) {
+    const pool = distractorPool(item).filter((candidate) => candidate.word !== item.word).slice(0, 3);
+    const optionData = makeOptionEntries(
+      { text: item.word, correct: true, note: `${item.reading} เขียนว่า ${item.word}` },
+      pool.map((candidate) => ({ text: candidate.word, note: `คำนี้อ่านว่า ${candidate.reading}` })),
+      `${seed}-orthography`,
+    );
+    return {
+      type: 'question', level: item.level, itemLevel: item.level, skill: 'vocab', subtype: 'orthography', itemId: item.id,
+      kicker: `${item.level} · ORTHOGRAPHY`,
+      prompt: `「${item.reading}」เขียนอย่างไร`,
+      hint: 'เทียบรูปคันจิและเสียงอ่าน ไม่เลือกจากความคุ้นตาอย่างเดียว',
+      options: optionData.options,
+      optionNotes: optionData.notes,
+      answer: optionData.answer,
+      speakText: item.reading,
+      questionType: 'vocab_orthography',
+      errorCodes: ['VOC_ORTHOGRAPHY', 'VOC_SIMILAR_KANJI'],
+      targetIds: [item.id],
+      topicIds: Array.isArray(item.topicIds) ? item.topicIds : [],
+      estimatedSeconds: TEXTBOOK.estimatedSeconds('vocab_orthography', item.level),
+      explanation: `${item.reading} เขียนว่า「${item.word}」และหมายถึง “${item.th}”`,
     };
   }
 
   function makeIntroCard(item) {
     return { type: 'intro', level: state.profile.targetLevel, itemLevel: item.level, skill: 'vocab', itemId: item.id };
+  }
+
+  function makeGrammarIntroCard(item) {
+    return {
+      type: 'grammar-intro',
+      level: item.level,
+      skill: 'grammar',
+      grammarId: item.id,
+      questionType: item.questionTypes?.[0] || 'grammar_sentence_choice',
+      contrastGroupIds: Array.isArray(item.contrastGroupIds) ? item.contrastGroupIds : [],
+    };
   }
 
   function makeGrammarCard(item) {
@@ -688,11 +822,21 @@
       `${localISO()}-${item.id}-${getLevelStats(item.level).grammar.attempts}`,
       (text) => `ตัวเลือก「${text}」ไม่ตรงกับรูปหรือความหมายที่โจทย์ต้องการ`,
     );
+    const questionType = item.questionTypes?.[0] || 'grammar_sentence_choice';
     return {
       type: 'question', level: item.level, skill: 'grammar', subtype: 'grammar', grammarId: item.id,
-      kicker: `${item.level} · GRAMMAR`, prompt: item.question,
+      kicker: `${item.level} · ${questionTypeLabel(questionType).toUpperCase()}`, prompt: item.question,
       hint: `${item.pattern} = ${item.th}`,
       options: optionData.options, optionNotes: optionData.optionNotes, answer: optionData.answer,
+      questionType,
+      errorCodes: item.errorCodes?.length ? item.errorCodes : ['GRM_NUANCE'],
+      targetIds: [item.id],
+      contrastGroupIds: Array.isArray(item.contrastGroupIds) ? item.contrastGroupIds : [],
+      quickCard: item.quickCard || null,
+      deepExplain: item.deepExplain || null,
+      commonErrorsTh: Array.isArray(item.commonErrorsTh) ? item.commonErrorsTh : [],
+      memoryHintTh: item.memoryHintTh || item.contrast || '',
+      estimatedSeconds: TEXTBOOK.estimatedSeconds(questionType, item.level),
       explanation: `${item.why} · รูปประโยค: ${item.formation} · ตัวอย่าง: ${item.example} (${item.exampleTh}) · ${item.contrast}`,
     };
   }
@@ -703,30 +847,33 @@
       `${localISO()}-${item.id}-${getLevelStats(item.level).reading.attempts}`,
       (text) => `บทอ่านไม่ได้สนับสนุนคำตอบ「${text}」 ให้ย้อนดูเงื่อนไข คำปฏิเสธ หรือข้อสรุปของผู้เขียน`,
     );
+    const questionType = item.questionType || 'reading_short_passage';
     return {
       type: 'question', level: item.level, skill: 'reading', subtype: 'reading', readingId: item.id,
-      kicker: `${item.level} · READING`, prompt: item.question,
+      kicker: `${item.level} · ${questionTypeLabel(questionType).toUpperCase()}`, prompt: item.question,
       hint: item.level === 'N1' || item.level === 'N2' ? 'จับข้ออ้าง เหตุผล และจุดที่ผู้เขียนเปลี่ยนมุม' : 'อ่านคำถามก่อน แล้วหาประโยคที่ตรงกัน',
       passage: item.text, title: item.title,
       options: optionData.options, optionNotes: optionData.optionNotes, answer: optionData.answer,
+      questionType,
+      errorCodes: item.errorCodes?.length ? item.errorCodes : ['READ_DETAIL'],
+      targetIds: [item.id],
+      estimatedSeconds: TEXTBOOK.estimatedSeconds(questionType, item.level),
       explanation: item.explanation,
     };
   }
 
   function inferListeningType(item, dialogue) {
     const script = String(item.script || '');
-    if (dialogue.speakers.length === 1 && /放送|予報|司会|ナレーター/.test(script)) return 'announcement';
-    if (/何をしますか|どうしますか|まず何/.test(item.question || '')) return 'task';
-    if (/どうして|なぜ|理由/.test(item.question || '')) return 'key-point';
-    if (dialogue.speakers.length > 1) return 'conversation';
-    return 'monologue';
+    if (dialogue.speakers.length === 1 && /放送|予報|司会|ナレーター/.test(script)) return 'listening_announcement';
+    if (/何をしますか|どうしますか|まず何/.test(item.question || '')) return 'listening_task_comprehension';
+    if (/どうして|なぜ|理由/.test(item.question || '')) return 'listening_key_point';
+    if (dialogue.speakers.length > 2) return 'listening_speaker_tracking';
+    if (dialogue.speakers.length > 1) return 'listening_key_point';
+    return 'listening_announcement';
   }
 
   function listeningTypeLabel(type) {
-    return ({
-      conversation: '会話', announcement: 'アナウンス', task: '課題理解',
-      'key-point': 'ポイント理解', monologue: 'モノローグ',
-    })[type] || 'LISTENING';
+    return questionTypeLabel(type || 'listening_key_point');
   }
 
   function makeListeningCard(item) {
@@ -735,7 +882,11 @@
       `${localISO()}-${item.id}-${getLevelStats(item.level).listening.attempts}`,
       (text) => `เสียงไม่ได้สรุปว่า「${text}」 ให้ฟังจุดเปลี่ยนแผน ความเห็นสุดท้าย และคำปฏิเสธ`,
     );
-    const dialogue = DIALOGUE.normalize(item);
+    const dialogueFromItem = DIALOGUE.normalize(item);
+    const dialogueFromScript = item.script ? DIALOGUE.normalize(item.script) : dialogueFromItem;
+    const dialogue = dialogueFromScript.speakers.length > 1 && dialogueFromScript.lines.length >= dialogueFromItem.lines.length
+      ? dialogueFromScript
+      : dialogueFromItem;
     const questionType = item.questionType || inferListeningType(item, dialogue);
     return {
       type: 'question', level: item.level, skill: 'listening', subtype: 'listening', listeningId: item.id,
@@ -745,9 +896,64 @@
         : 'รอบแรกจับสถานการณ์ เวลา และข้อสรุปสุดท้ายก่อน',
       script: item.script, title: item.title, dialogue, questionType,
       options: optionData.options, optionNotes: optionData.optionNotes, answer: optionData.answer,
+      errorCodes: item.errorCodes?.length ? item.errorCodes : ['LISTEN_KEY_POINT'],
+      targetIds: [item.id],
+      estimatedSeconds: TEXTBOOK.estimatedSeconds(questionType, item.level),
       explanation: item.explanation,
       speakText: dialogue.lines.map((line) => line.text).join('。'),
     };
+  }
+
+  function makePracticeCard(item) {
+    const optionData = shuffleExistingOptions(
+      item.options || [], Number(item.answer || 0),
+      `${localISO()}-${item.id}-${getSubtypeStats(item.level).questionTypes?.[item.questionType]?.attempts || 0}`,
+      (text) => `ตัวเลือก「${text}」ไม่ตรงกับข้อมูลหรือรูปแบบที่โจทย์กำหนด`,
+    );
+    const base = {
+      type: 'question',
+      level: item.level,
+      skill: item.skill,
+      subtype: item.skill,
+      practiceId: item.id,
+      sourceItemId: item.sourceItemId || null,
+      questionType: item.questionType || `${item.skill}_practice`,
+      errorCodes: item.errorCodes?.length ? item.errorCodes : [],
+      targetIds: item.targetIds?.length ? item.targetIds : [item.sourceItemId].filter(Boolean),
+      kicker: `${item.level} · ${questionTypeLabel(item.questionType).toUpperCase()}`,
+      prompt: item.prompt,
+      hint: item.skill === 'reading' ? 'อ่านคำถามก่อน แล้วหาเงื่อนไขที่ตัดตัวเลือกได้' : item.skill === 'listening' ? 'จับผู้พูด ข้อมูลที่แก้ไข และข้อสรุปสุดท้าย' : 'ดูรูปเชื่อมและความหมายในบริบท',
+      options: optionData.options,
+      optionNotes: optionData.optionNotes,
+      answer: optionData.answer,
+      explanation: item.explanationTh || '',
+      estimatedSeconds: item.estimatedSeconds || TEXTBOOK.estimatedSeconds(item.questionType, item.level),
+    };
+    if (item.skill === 'reading') {
+      base.subtype = 'reading';
+      base.readingId = item.sourceItemId || item.id;
+      base.title = questionTypeLabel(item.questionType);
+      base.passage = item.passage || '';
+    } else if (item.skill === 'listening') {
+      base.subtype = 'listening';
+      base.listeningId = item.sourceItemId || item.id;
+      base.script = item.script || '';
+      base.title = questionTypeLabel(item.questionType);
+      base.dialogue = DIALOGUE.normalize({ script: item.script, turns: item.turns, speakers: item.speakers });
+      base.speakText = base.dialogue.lines.map((line) => line.text).join('。');
+    } else if (item.skill === 'grammar') {
+      base.subtype = 'grammar';
+      base.grammarId = item.sourceItemId || item.targetIds?.[0] || null;
+      const grammar = GRAMMAR_BY_ID.get(base.grammarId);
+      if (grammar) {
+        base.quickCard = grammar.quickCard || null;
+        base.deepExplain = grammar.deepExplain || null;
+        base.contrastGroupIds = grammar.contrastGroupIds || [];
+        base.commonErrorsTh = grammar.commonErrorsTh || [];
+        base.memoryHintTh = grammar.memoryHintTh || grammar.contrast || '';
+      }
+    }
+    return base;
   }
 
   function mistakePriority(items, skill, level, seed) {
@@ -768,6 +974,136 @@
     if (!items.length || count <= 0) return [];
     const prioritized = mistakePriority(items, skill, level, seed);
     return uniqueBy(prioritized, (item) => item.id).slice(0, count);
+  }
+
+  function prioritizedPractice(questionTypes, count, level = state.profile.targetLevel, seed = localISO()) {
+    const wanted = Array.isArray(questionTypes) ? questionTypes : [questionTypes];
+    let items = TEXTBOOK.practiceFor(level, wanted, CONTENT);
+    items = [...items].sort((a, b) => {
+      const scoreDiff = TEXTBOOK.practicePriority(b, level, state) - TEXTBOOK.practicePriority(a, level, state);
+      if (scoreDiff) return scoreDiff;
+      return hashString(`${seed}-${a.id}`) - hashString(`${seed}-${b.id}`);
+    });
+    return uniqueBy(items, (item) => item.id).slice(0, count);
+  }
+
+  function generatedCardsForBlueprint(questionType, count, level = state.profile.targetLevel, seed = localISO()) {
+    const cards = [];
+    if (questionType === 'vocab_kanji_reading') {
+      getNewItems(Math.max(count, 4), level).slice(0, count).forEach((item, index) => cards.push(makeVocabQuestion(item, `${seed}-kr-${index}`, 'reading')));
+    } else if (questionType === 'vocab_orthography') {
+      buildVocabOrder(level).slice(0, count).forEach((item, index) => cards.push(makeVocabOrthographyQuestion(item, `${seed}-orth-${index}`)));
+    } else if (questionType === 'vocab_context_meaning') {
+      buildVocabOrder(level).filter((item) => item.example && item.exampleTh).slice(0, count).forEach((item, index) => cards.push(makeVocabQuestion(item, `${seed}-ctx-${index}`, 'context')));
+    } else if (questionType === 'grammar_sentence_choice') {
+      pickItems(levelGrammar(level), 'grammar', count, level, `${seed}-g`).forEach((item) => cards.push(makeGrammarCard(item)));
+    }
+    return cards;
+  }
+
+  function buildBlueprintLesson(questionType, options = {}) {
+    const level = options.level || state.profile.targetLevel;
+    const count = Number(options.count || 8);
+    const seed = `${localISO()}-${level}-${questionType}`;
+    let cards = prioritizedPractice(questionType, count, level, seed).map(makePracticeCard);
+    if (cards.length < count) {
+      const generated = generatedCardsForBlueprint(questionType, count - cards.length, level, seed);
+      cards = uniqueBy([...cards, ...generated], cardKey).slice(0, count);
+    }
+    return {
+      id: `blueprint-${level}-${questionType}-${Date.now()}`,
+      level,
+      mode: 'blueprint',
+      questionType,
+      title: `${level} · ${questionTypeLabel(questionType)}`,
+      plannedMinutes: Math.max(6, Math.round(count * TEXTBOOK.estimatedSeconds(questionType, level) / 60)),
+      cards: seededShuffle(cards, seed),
+    };
+  }
+
+  function buildLearningPathLesson(stage, options = {}) {
+    const level = options.level || state.profile.targetLevel;
+    const cards = [];
+    const grammarIds = Array.isArray(stage.grammarIds) ? stage.grammarIds : [];
+    grammarIds.slice(0, 6).forEach((id) => {
+      const item = GRAMMAR_BY_ID.get(id);
+      if (!item) return;
+      cards.push(makeGrammarIntroCard(item));
+      cards.push(makeGrammarCard(item));
+    });
+    const topicIds = Array.isArray(stage.topicIds) ? stage.topicIds : [];
+    const topicItems = uniqueBy(topicIds.flatMap((topicId) => TEXTBOOK.topicVocab(level, topicId, CONTENT)), (item) => item.id);
+    seededShuffle(topicItems, `${level}-path-${stage.stage}`).slice(0, 6).forEach((item, index) => {
+      if (!state.srs[item.id]) cards.push(makeIntroCard(item));
+      cards.push(makeVocabQuestion(item, `${level}-path-${stage.stage}-v-${index}`, index % 2 ? 'reading' : 'context'));
+    });
+    prioritizedPractice(['reading_short_passage', 'reading_notice_email'], 1, level, `${level}-path-${stage.stage}-r`).forEach((item) => cards.push(makePracticeCard(item)));
+    prioritizedPractice(['listening_key_point', 'listening_task_comprehension'], 1, level, `${level}-path-${stage.stage}-l`).forEach((item) => cards.push(makePracticeCard(item)));
+    if (!cards.length) return buildModeLesson('mixed', { level, title: stage.titleTh });
+    return {
+      id: `path-${level}-${stage.stage}-${Date.now()}`,
+      level,
+      mode: 'learning-path',
+      pathStage: Number(stage.stage),
+      title: `${level} Path ${stage.stage}: ${stage.titleTh}`,
+      plannedMinutes: Math.max(10, Math.round(cards.length * 1.4)),
+      cards: seededInterleave(cards, `${level}-path-${stage.stage}`),
+    };
+  }
+
+  function buildTopicLesson(topicId, options = {}) {
+    const level = options.level || state.profile.targetLevel;
+    const topic = TEXTBOOK.topic(topicId, CONTENT);
+    const items = TEXTBOOK.topicVocab(level, topicId, CONTENT);
+    const cards = [];
+    seededShuffle(items, `${localISO()}-${topicId}`).slice(0, 10).forEach((item, index) => {
+      if (!state.srs[item.id]) cards.push(makeIntroCard(item));
+      cards.push(makeVocabQuestion(item, `${topicId}-${index}`, index % 3 === 1 ? 'reading' : 'context'));
+    });
+    if (!cards.length) {
+      const fallback = buildVocabOrder(level).filter((item) => item.theme === options.theme).slice(0, 8);
+      fallback.forEach((item, index) => cards.push(makeVocabQuestion(item, `${topicId}-fallback-${index}`)));
+    }
+    return {
+      id: `topic-${level}-${topicId}-${Date.now()}`,
+      level,
+      mode: 'topic-path',
+      topicId,
+      title: topic?.labelTh || topicId,
+      plannedMinutes: 12,
+      cards: seededInterleave(cards, `${localISO()}-${topicId}`),
+    };
+  }
+
+  function buildMockLadderLesson(stage, options = {}) {
+    const level = options.level || state.profile.targetLevel;
+    const targetCount = stage.stage >= 10 ? 20 : Math.min(14, 6 + Number(stage.stage || 1));
+    const focus = Array.isArray(stage.focus) ? stage.focus : ['all'];
+    let cards = prioritizedPractice(focus, targetCount, level, `${level}-mock-${stage.stage}`).map(makePracticeCard);
+    const fallbackTypes = focus.includes('all')
+      ? ['grammar_sentence_choice', 'reading_short_passage', 'listening_key_point']
+      : focus;
+    for (const type of fallbackTypes) {
+      if (cards.length >= targetCount) break;
+      cards.push(...generatedCardsForBlueprint(type, targetCount - cards.length, level, `${level}-mock-${stage.stage}-${type}`));
+    }
+    if (cards.length < targetCount) {
+      const generic = [
+        ...levelGrammar(level).slice(0, 4).map(makeGrammarCard),
+        ...levelReadings(level).slice(0, 3).map(makeReadingCard),
+        ...levelListenings(level).slice(0, 3).map(makeListeningCard),
+      ];
+      cards = uniqueBy([...cards, ...generic], cardKey).slice(0, targetCount);
+    }
+    return {
+      id: `mock-ladder-${level}-${stage.stage}-${Date.now()}`,
+      level,
+      mode: 'mock-ladder',
+      mockStage: Number(stage.stage),
+      title: `Mock ${stage.stage}: ${stage.nameTh}`,
+      plannedMinutes: stage.timing === 'exam_full' ? 35 : stage.timing === 'exam' ? 22 : 15,
+      cards: seededShuffle(cards, `${level}-mock-stage-${stage.stage}`),
+    };
   }
 
   function buildDailyLesson() {
@@ -793,6 +1129,11 @@
     pickItems(levelReadings(level), 'reading', counts.reading, level, `${today}-reading`).forEach((item) => cards.push(makeReadingCard(item)));
     pickItems(levelListenings(level), 'listening', counts.listening, level, `${today}-listening`).forEach((item) => cards.push(makeListeningCard(item)));
 
+    const weakQuestionType = adaptive.weakSubtypes?.find((row) => row.kind === 'questionType' && TEXTBOOK.practiceCount(level, row.id, CONTENT) > 0)?.id;
+    if (weakQuestionType) {
+      prioritizedPractice(weakQuestionType, 1, level, `${today}-adaptive-subtype`).forEach((item) => cards.push(makePracticeCard(item)));
+    }
+
     if (!cards.length) buildVocabOrder(level).slice(0, 5).forEach((item, index) => cards.push(makeVocabQuestion(item, `${today}-fallback-${index}`)));
 
     return {
@@ -806,12 +1147,12 @@
   }
 
   function seededInterleave(cards, seed) {
-    const intros = cards.filter((card) => card.type === 'intro');
+    const intros = cards.filter((card) => card.type === 'intro' || card.type === 'grammar-intro');
     const questions = cards.filter((card) => card.type === 'question');
     const result = [];
     intros.forEach((intro) => {
       result.push(intro);
-      const immediate = questions.find((q) => q.itemId === intro.itemId);
+      const immediate = questions.find((q) => (intro.itemId && q.itemId === intro.itemId) || (intro.grammarId && q.grammarId === intro.grammarId));
       if (immediate) result.push(immediate);
     });
     const used = new Set(result.map(cardKey));
@@ -820,7 +1161,7 @@
   }
 
   function cardKey(card) {
-    return `${card.type}-${card.level}-${card.skill}-${card.itemId || card.grammarId || card.readingId || card.listeningId || ''}-${card.subtype || ''}`;
+    return `${card.type}-${card.level}-${card.skill}-${card.practiceId || card.itemId || card.grammarId || card.readingId || card.listeningId || ''}-${card.subtype || ''}`;
   }
 
   function buildModeLesson(mode, options = {}) {
@@ -846,7 +1187,10 @@
     } else if (mode === 'listening') {
       pickItems(levelListenings(level), 'listening', 3, level, `${today}-listening-mode`).forEach((item) => cards.push(makeListeningCard(item)));
     } else if (mode === 'grammar') {
-      pickItems(levelGrammar(level), 'grammar', 6, level, `${today}-grammar-mode`).forEach((item) => cards.push(makeGrammarCard(item)));
+      pickItems(levelGrammar(level), 'grammar', 4, level, `${today}-grammar-mode`).forEach((item) => {
+        cards.push(makeGrammarIntroCard(item));
+        cards.push(makeGrammarCard(item));
+      });
     } else if (mode === 'theme') {
       const items = levelVocab(level).filter((item) => item.theme === options.theme);
       seededShuffle(items, `${today}-${level}-theme-${options.theme}`).slice(0, 8).forEach((item, index) => {
@@ -962,6 +1306,52 @@
     renderAll();
   }
 
+  function grammarContrastMarkup(item) {
+    const groups = TEXTBOOK.contrastGroupsForGrammar(item, CONTENT);
+    if (!groups.length) return '';
+    return `<div class="contrast-stack">${groups.map((group) => `<article class="contrast-note"><strong>⚖️ ${escapeHtml(group.titleTh)}</strong><p>${escapeHtml(group.decisionRuleTh)}</p></article>`).join('')}</div>`;
+  }
+
+  function grammarStudyMarkup(item) {
+    const quick = item.quickCard || { pattern: item.pattern, connection: item.formation, meaningTh: item.th, example: item.example, exampleTh: item.exampleTh };
+    const deep = item.deepExplain || {};
+    const errors = Array.isArray(item.commonErrorsTh) ? item.commonErrorsTh : [];
+    return `<article class="grammar-study-card">
+      <div class="grammar-study-head"><span class="target-level-badge">${escapeHtml(item.level)}</span><span class="question-type-chip">${escapeHtml(questionTypeLabel(item.questionTypes?.[0] || 'grammar_sentence_choice'))}</span></div>
+      <div class="grammar-pattern">${escapeHtml(quick.pattern || item.pattern)}</div>
+      <div class="grammar-meaning">${escapeHtml(quick.meaningTh || item.th)}</div>
+      <div class="grammar-connection"><strong>接続 / รูปเชื่อม</strong><span>${escapeHtml(quick.connection || item.formation)}</span></div>
+      <div class="example-box"><div class="example-jp">${escapeHtml(quick.example || item.example)}</div><div class="example-th">${escapeHtml(quick.exampleTh || item.exampleTh)}</div></div>
+      ${item.memoryHintTh ? `<div class="memory-tip"><span>🧷</span><span>${escapeHtml(item.memoryHintTh)}</span></div>` : ''}
+      ${grammarContrastMarkup(item)}
+      <details class="deep-explain"><summary>เปิดคำอธิบายแบบละเอียด</summary><div class="deep-explain-body">
+        <p><strong>Nuance:</strong> ${escapeHtml(deep.nuanceTh || item.contrast || item.th)}</p>
+        <p><strong>เหตุผลของคำตอบ:</strong> ${escapeHtml(deep.whyThisAnswerTh || item.why || '')}</p>
+        ${errors.length ? `<div><strong>ข้อผิดพลาดที่พบบ่อย</strong><ul>${errors.map((error) => `<li>${escapeHtml(error)}</li>`).join('')}</ul></div>` : ''}
+      </div></details>
+    </article>`;
+  }
+
+  function feedbackDetailsMarkup(card, correct, selected, elapsedSeconds) {
+    const type = card.questionType || card.subtype || card.skill;
+    const typeLabel = questionTypeLabel(type);
+    const target = Number(card.estimatedSeconds || TEXTBOOK.estimatedSeconds(type, card.level));
+    const errors = Array.isArray(card.errorCodes) ? card.errorCodes : [];
+    const timingClass = elapsedSeconds && target && elapsedSeconds > target * 1.25 ? 'slow' : 'ok';
+    let html = `<div class="feedback-meta"><span class="question-type-chip">${escapeHtml(typeLabel)}</span>${target ? `<span class="timing-chip ${timingClass}">เป้า ~${target}s${elapsedSeconds ? ` · ใช้ ${elapsedSeconds}s` : ''}</span>` : ''}</div>`;
+    if (!correct && errors.length) html += `<div class="error-chip-row">${errors.map((code) => `<span class="error-chip" title="${escapeAttr(code)}">${escapeHtml(errorCodeLabel(code))}</span>`).join('')}</div>`;
+    if (card.skill === 'grammar') {
+      const item = card.grammarId ? GRAMMAR_BY_ID.get(card.grammarId) : null;
+      if (item) html += grammarStudyMarkup(item);
+    } else if (card.skill === 'vocab' && card.itemId) {
+      const item = VOCAB_BY_ID.get(card.itemId);
+      if (item?.collocations?.length) html += `<div class="collocation-box"><strong>คำที่ใช้ร่วมกัน</strong><div>${item.collocations.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div></div>`;
+    } else if (card.skill === 'listening' && card.dialogue) {
+      html += `<div class="analysis-note">🎧 ${card.dialogue.speakers.length} ผู้พูด · ฟัง ${listeningPlayCount(card)} รอบ · ${escapeHtml(typeLabel)}</div>`;
+    }
+    return html;
+  }
+
   function renderLessonCard() {
     stopQuestionTimer();
     stopSpeech();
@@ -971,6 +1361,7 @@
     const feedback = $('feedbackPanel');
     feedback.className = 'feedback-panel';
     feedback.classList.remove('show', 'correct', 'wrong');
+    if ($('feedbackDetails')) $('feedbackDetails').innerHTML = '';
     activeLesson.selected = null;
     activeLesson.answered = false;
 
@@ -1004,6 +1395,8 @@
           <div class="big-en">${escapeHtml(item.en)}</div>
           <div class="example-box"><div class="example-jp">${escapeHtml(item.example)}</div><div class="example-th">${escapeHtml(item.exampleTh)}</div></div>
           <div class="memory-tip"><span>🧷</span><span>${escapeHtml(item.tip)}</span></div>
+          ${item.collocations?.length ? `<div class="collocation-box"><strong>คำที่ใช้ร่วมกัน</strong><div>${item.collocations.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div></div>` : ''}
+          ${item.partOfSpeech ? `<div class="lexical-meta">ชนิดคำ: ${escapeHtml(item.partOfSpeech)}</div>` : ''}
           <button type="button" class="secondary-btn small-btn speak-btn" data-speak="${escapeAttr(item.word + '。' + item.example)}">🔊 ฟังเสียง</button>
         </article>`;
       action.textContent = 'จำแล้ว ไปต่อ';
@@ -1013,6 +1406,19 @@
         renderLessonCard();
       };
       bindSpeakButtons(main);
+      return;
+    }
+
+    if (card.type === 'grammar-intro') {
+      const item = GRAMMAR_BY_ID.get(card.grammarId);
+      if (!item) { activeLesson.index += 1; renderLessonCard(); return; }
+      main.innerHTML = `<div class="lesson-kicker">${escapeHtml(item.level)} · GRAMMAR QUICK CARD</div><h2 class="lesson-question" id="lessonTitle">เข้าใจรูปประโยคก่อนทำโจทย์</h2>${grammarStudyMarkup(item)}`;
+      action.textContent = 'เข้าใจแล้ว ทำโจทย์';
+      action.onclick = () => {
+        activeLesson.xpEarned += 1;
+        activeLesson.index += 1;
+        renderLessonCard();
+      };
       return;
     }
 
@@ -1135,11 +1541,12 @@
   }
 
   function renderQuestion(card, main) {
-    let body = `<div class="lesson-question-top"><div class="lesson-kicker">${escapeHtml(card.kicker)}</div><div class="question-timer" id="questionTimer">⏱ 00:00</div></div><h2 class="lesson-question" id="lessonTitle">${escapeHtml(card.prompt).replace(/\n/g, '<br>')}</h2>`;
+    const targetSeconds = Number(card.estimatedSeconds || TEXTBOOK.estimatedSeconds(card.questionType || card.subtype || card.skill, card.level));
+    let body = `<div class="lesson-question-top"><div class="lesson-kicker">${escapeHtml(card.kicker)}</div><div class="question-timer" id="questionTimer">⏱ 00:00</div></div><div class="question-meta-row"><span class="question-type-chip">${escapeHtml(questionTypeLabel(card.questionType || card.subtype || card.skill))}</span>${targetSeconds ? `<span class="target-time-chip">เป้า ~${targetSeconds}s</span>` : ''}</div><h2 class="lesson-question" id="lessonTitle">${escapeHtml(card.prompt).replace(/\n/g, '<br>')}</h2>`;
     if (card.hint) body += `<p class="lesson-hint">${escapeHtml(card.hint)}</p>`;
 
     if (card.subtype === 'reading') {
-      body += `<article class="passage-card"><h3 class="passage-title">${escapeHtml(card.title)}</h3><p class="passage-text">${escapeHtml(card.passage)}</p></article>`;
+      body += `<article class="passage-card"><div class="passage-heading-row"><h3 class="passage-title">${escapeHtml(card.title)}</h3><span>${escapeHtml(questionTypeLabel(card.questionType || 'reading_short_passage'))}</span></div><p class="passage-text">${escapeHtml(card.passage)}</p></article>`;
     }
 
     if (card.subtype === 'listening') {
@@ -1193,6 +1600,14 @@
     stat.attempts += 1;
     if (correct) stat.correct += 1;
     stat.totalSeconds = Number(stat.totalSeconds || 0) + elapsedSeconds;
+    TEXTBOOK.recordSubtypeAttempt(
+      state.subtypeStatsByLevel,
+      card.level || state.profile.targetLevel,
+      card,
+      correct,
+      elapsedSeconds,
+      localISO(),
+    );
     if (card.skill === 'vocab' && card.itemId) updateSrs(card.itemId, correct);
 
     const earned = correct ? 10 : 2;
@@ -1219,48 +1634,58 @@
       explanation = `${explanation} · ฟัง ${plays} รอบ${card.dialogue?.speakers?.length > 1 ? ` · ${card.dialogue.speakers.length} ผู้พูด` : ''}`;
     }
     if (elapsedSeconds) explanation = `${explanation} · ใช้เวลา ${formatElapsed(elapsedSeconds)}`;
-    showFeedback(correct, explanation);
+    showFeedback(correct, explanation, feedbackDetailsMarkup(card, correct, selected, elapsedSeconds));
     $('lessonActionBtn').textContent = activeLesson.index === activeLesson.cards.length - 1 ? 'ดูสรุป' : 'ไปต่อ';
     $('lessonActionBtn').disabled = false;
     $('lessonEnergy').textContent = `💚 ${activeLesson.energy}`;
 
-    if (!correct) recordMistake(card, selected);
+    if (!correct) recordMistake(card, selected, elapsedSeconds);
     saveState();
   }
 
-  function recordMistake(card, selected) {
-    const contentId = card.itemId || card.grammarId || card.readingId || card.listeningId || cardKey(card);
-    const key = `${card.level}:${card.skill}:${contentId}`;
+  function recordMistake(card, selected, elapsedSeconds = 0) {
+    const contentId = card.practiceId || card.itemId || card.grammarId || card.readingId || card.listeningId || cardKey(card);
+    const questionType = card.questionType || card.subtype || card.skill;
+    const key = `${card.level}:${card.skill}:${questionType}:${contentId}`;
     const existing = state.mistakes.find((m) => m.key === key);
     const record = {
       key,
       level: card.level || state.profile.targetLevel,
       skill: card.skill,
+      practiceId: card.practiceId || null,
       itemId: card.itemId || null,
       grammarId: card.grammarId || null,
       readingId: card.readingId || null,
       listeningId: card.listeningId || null,
       prompt: card.prompt,
       selected: card.options[selected] || '',
+      selectedIndex: Number(selected),
       correct: card.options[card.answer] || '',
+      correctIndex: Number(card.answer),
       explanation: card.optionNotes?.[selected] ? `${card.optionNotes[selected]} · ${card.explanation}` : card.explanation,
       audioPlays: card.skill === 'listening' ? listeningPlayCount(card) : null,
       speakerCount: card.skill === 'listening' ? Number(card.dialogue?.speakers?.length || 1) : null,
-      questionType: card.skill === 'listening' ? (card.questionType || 'listening') : null,
+      questionType,
+      errorCodes: Array.isArray(card.errorCodes) ? card.errorCodes : [],
+      targetIds: Array.isArray(card.targetIds) ? card.targetIds : [],
+      topicIds: Array.isArray(card.topicIds) ? card.topicIds : [],
+      contrastGroupIds: Array.isArray(card.contrastGroupIds) ? card.contrastGroupIds : [],
+      responseSeconds: Number(elapsedSeconds || 0),
       date: localISO(),
       count: (existing?.count || 0) + 1,
     };
     if (existing) Object.assign(existing, record);
     else state.mistakes.unshift(record);
-    state.mistakes = state.mistakes.sort((a, b) => b.date.localeCompare(a.date) || b.count - a.count).slice(0, 240);
+    state.mistakes = state.mistakes.sort((a, b) => b.date.localeCompare(a.date) || b.count - a.count).slice(0, 360);
     activeLesson.wrongItems.push(record);
   }
 
-  function showFeedback(correct, text) {
+  function showFeedback(correct, text, detailsHtml = '') {
     const panel = $('feedbackPanel');
     panel.className = `feedback-panel show ${correct ? 'correct' : 'wrong'}`;
-    $('feedbackTitle').textContent = correct ? '✅ ถูกต้อง เก่งมาก!' : '🧠 ยังไม่ใช่ แต่ระบบจำข้อนี้แล้ว';
+    $('feedbackTitle').textContent = correct ? '✅ ถูกต้อง เก่งมาก!' : '🧠 ยังไม่ใช่ แต่ระบบจำสาเหตุไว้แล้ว';
     $('feedbackText').textContent = text;
+    if ($('feedbackDetails')) $('feedbackDetails').innerHTML = detailsHtml || '';
   }
 
   function renderLessonSummary() {
@@ -1298,7 +1723,7 @@
   function completeLesson() {
     activeLesson.finished = true;
     const today = localISO();
-    const bonus = 20;
+    const bonus = activeLesson.mode === 'mock-ladder' ? 30 : 20;
     activeLesson.xpEarned += bonus;
     state.xp += bonus;
 
@@ -1308,12 +1733,57 @@
       state.lastStudyDate = today;
     }
     state.completedDates[today] = (state.completedDates[today] || 0) + 1;
+    const lessonAccuracy = activeLesson.attempts ? Math.round(activeLesson.correct / activeLesson.attempts * 100) : 100;
+    const elapsedTotal = activeLesson.questionTimes.reduce((sum, value) => sum + Number(value || 0), 0);
+
+    if (activeLesson.mode === 'learning-path' && activeLesson.pathStage) {
+      const progress = pathProgress(activeLesson.level);
+      const current = progress[activeLesson.pathStage] || { attempts: 0, bestAccuracy: 0 };
+      progress[activeLesson.pathStage] = {
+        attempts: Number(current.attempts || 0) + 1,
+        bestAccuracy: Math.max(Number(current.bestAccuracy || 0), lessonAccuracy),
+        lastAccuracy: lessonAccuracy,
+        lastDate: today,
+        completed: lessonAccuracy >= 70 || Boolean(current.completed),
+      };
+    }
+
+    if (activeLesson.mode === 'mock-ladder' && activeLesson.mockStage) {
+      const progress = mockLadderProgress(activeLesson.level);
+      const current = progress[activeLesson.mockStage] || { attempts: 0, bestAccuracy: 0, bestSeconds: null };
+      progress[activeLesson.mockStage] = {
+        attempts: Number(current.attempts || 0) + 1,
+        bestAccuracy: Math.max(Number(current.bestAccuracy || 0), lessonAccuracy),
+        lastAccuracy: lessonAccuracy,
+        lastDate: today,
+        bestSeconds: current.bestSeconds == null ? elapsedTotal : Math.min(Number(current.bestSeconds), elapsedTotal),
+        completed: lessonAccuracy >= 75 || Boolean(current.completed),
+      };
+    }
+
+    if (activeLesson.mode === 'topic-path' && activeLesson.topicId) {
+      state.topicSessionHistory.unshift({
+        id: activeLesson.id,
+        level: activeLesson.level,
+        topicId: activeLesson.topicId,
+        date: today,
+        accuracy: lessonAccuracy,
+      });
+      state.topicSessionHistory = state.topicSessionHistory.slice(0, 240);
+    }
+
     state.lessonHistory.unshift({
       id: activeLesson.id, level: activeLesson.level, date: today, mode: activeLesson.mode,
       correct: activeLesson.correct, attempts: activeLesson.attempts, xp: activeLesson.xpEarned,
       durationEstimate: activeLesson.plannedMinutes,
+      elapsedSeconds: elapsedTotal,
+      pathStage: activeLesson.pathStage || null,
+      mockStage: activeLesson.mockStage || null,
+      topicId: activeLesson.topicId || null,
+      questionType: activeLesson.questionType || null,
     });
     state.lessonHistory = state.lessonHistory.slice(0, 730);
+    state.contentSchemaVersionSeen = Number(CONTENT.meta?.contentSchemaVersion || state.contentSchemaVersionSeen || 1);
     saveState();
   }
 
@@ -1654,12 +2124,62 @@
     const vocabAccuracy = accuracy('vocab', level);
     $('accuracyCount').textContent = vocabAccuracy == null ? '—' : `${vocabAccuracy}%`;
 
+    const paths = TEXTBOOK.learningPath(level, CONTENT);
+    const progress = pathProgress(level);
+    if ($('learningPathList')) {
+      if (!paths.length) {
+        $('learningPathList').innerHTML = `<div class="empty-state compact-empty"><div class="big">🧭</div><h3>Textbook Path ของ ${level} ยังอยู่ระหว่างขยาย</h3><p>โหมด Adaptive Mix และ Question Lab ยังใช้งานได้ตามปกติ</p></div>`;
+      } else {
+        $('learningPathList').innerHTML = paths.map((stage) => {
+          const item = progress[stage.stage] || {};
+          const status = item.completed ? 'done' : item.attempts ? 'active' : '';
+          const score = item.attempts ? `${item.bestAccuracy || 0}% ดีที่สุด` : 'ยังไม่เริ่ม';
+          return `<button type="button" class="learning-path-row ${status}" data-learning-path-stage="${stage.stage}"><span class="path-number">${item.completed ? '✓' : stage.stage}</span><span class="path-copy"><strong>${escapeHtml(stage.titleTh)}</strong><small>${escapeHtml(score)} · ${Array.isArray(stage.grammarIds) ? stage.grammarIds.length : 0} Grammar${stage.topicIds?.length ? ` · ${stage.topicIds.length} Topic` : ''}</small></span><span class="path-action">เริ่ม ›</span></button>`;
+        }).join('');
+        $$('[data-learning-path-stage]', $('learningPathList')).forEach((button) => {
+          button.onclick = () => {
+            const stage = paths.find((item) => Number(item.stage) === Number(button.dataset.learningPathStage));
+            if (stage) startLesson(buildLearningPathLesson(stage));
+          };
+        });
+      }
+    }
+
+    if ($('questionLabGrid')) {
+      const generatedTypes = new Set(['vocab_kanji_reading', 'vocab_orthography', 'vocab_context_meaning', 'grammar_sentence_choice']);
+      const blueprints = TEXTBOOK.blueprintsForLevel(level, CONTENT)
+        .map((item) => ({ ...item, count: TEXTBOOK.practiceCount(level, item.id, CONTENT), generated: generatedTypes.has(item.id) }))
+        .filter((item) => item.count > 0 || item.generated)
+        .slice(0, 12);
+      $('questionLabGrid').innerHTML = blueprints.map((item) => {
+        const icon = SKILL_LABELS[item.skill]?.icon || '📝';
+        const countLabel = item.count ? `${item.count} ข้อ` : 'สร้างจากคลัง';
+        return `<button type="button" class="question-lab-card" data-question-type="${escapeAttr(item.id)}"><span>${icon}</span><strong>${escapeHtml(item.labelTh)}</strong><small>${escapeHtml(item.labelJa || '')} · ${countLabel}</small></button>`;
+      }).join('') || '<div class="empty-state compact-empty"><p>ยังไม่มี Question Blueprint ที่พร้อมใช้ในระดับนี้</p></div>';
+      $$('[data-question-type]', $('questionLabGrid')).forEach((button) => {
+        button.onclick = () => startLesson(buildBlueprintLesson(button.dataset.questionType));
+      });
+    }
+
     const vocab = levelVocab(level);
     const countsByTheme = {};
     Object.keys(state.srs).forEach((id) => {
       const item = VOCAB_BY_ID.get(id);
       if (item && isWithinTargetLevel(item.level, level)) countsByTheme[item.theme] = (countsByTheme[item.theme] || 0) + 1;
     });
+
+    const textbookTopics = TEXTBOOK.topicsForLevel(level, CONTENT)
+      .map((topic) => ({ ...topic, coverage: TEXTBOOK.topicCoverage(level, topic.id, state, CONTENT) }))
+      .filter((topic) => topic.coverage.total > 0)
+      .sort((a, b) => b.coverage.total - a.coverage.total || a.id.localeCompare(b.id));
+    if ($('topicCoverageLabel')) $('topicCoverageLabel').textContent = textbookTopics.length ? `${textbookTopics.length} หัวข้อที่มีเนื้อหาพร้อมฝึก` : 'Starter coverage';
+    if ($('topicPathList')) {
+      $('topicPathList').innerHTML = textbookTopics.slice(0, 16).map((topic) => `<button type="button" class="topic-path-row" data-topic-id="${escapeAttr(topic.id)}"><span class="topic-path-icon">🗂️</span><span><strong>${escapeHtml(topic.labelTh)}</strong><small>${escapeHtml(topic.labelJa)} · ${topic.coverage.learned}/${topic.coverage.total} เริ่มเรียน</small><span class="mini-progress"><i style="width:${topic.coverage.percent}%"></i></span></span><em>ฝึก ›</em></button>`).join('') || '<div class="empty-state compact-empty"><p>หัวข้อ Textbook ของระดับนี้ยังไม่มีคำศัพท์ที่ Tag ไว้เพียงพอ</p></div>';
+      $$('[data-topic-id]', $('topicPathList')).forEach((button) => {
+        button.onclick = () => startLesson(buildTopicLesson(button.dataset.topicId));
+      });
+    }
+
     const themes = uniqueBy(vocab.map((item) => item.theme), (theme) => theme);
     $('contentCountLabel').textContent = `${levelLexicalVocab(level).length.toLocaleString()} Vocabulary · ${levelKanji(level).length.toLocaleString()} Kanji · ${levelGrammar(level).length} Grammar · ${levelReadings(level).length} Reading · ${levelListenings(level).length} Listening`;
     $('themeList').innerHTML = themes.map((theme) => {
@@ -1708,16 +2228,18 @@
     const level = state.profile.targetLevel;
     const mistakes = state.mistakes.filter((item) => item.level === level);
     if (!mistakes.length) {
-      $('mistakeList').innerHTML = '<div class="empty-state"><div class="big">✨</div><h3>ยังไม่มีข้อผิดในระดับนี้</h3><p>เมื่อตอบผิด ระบบจะเก็บคำอธิบายและเพิ่มข้อนั้นเข้าคิวทบทวน</p></div>';
+      $('mistakeList').innerHTML = '<div class="empty-state"><div class="big">✨</div><h3>ยังไม่มีข้อผิดในระดับนี้</h3><p>เมื่อตอบผิด ระบบจะเก็บ Question type, Error code และนำกลับมาฝึกแบบตรงจุด</p></div>';
       return;
     }
-    $('mistakeList').innerHTML = `<div class="mistake-stack">${mistakes.slice(0, 15).map((mistake) => {
+    $('mistakeList').innerHTML = `<div class="mistake-stack">${mistakes.slice(0, 20).map((mistake) => {
       const item = mistake.itemId ? VOCAB_BY_ID.get(mistake.itemId) : null;
-      const title = item ? `${item.word}（${item.reading}）` : `${SKILL_LABELS[mistake.skill]?.icon || '📝'} ${SKILL_LABELS[mistake.skill]?.th || mistake.skill}`;
+      const title = item ? `${item.word}（${item.reading}）` : `${SKILL_LABELS[mistake.skill]?.icon || '📝'} ${questionTypeLabel(mistake.questionType || mistake.skill)}`;
       const listeningMeta = mistake.skill === 'listening'
-        ? ` · ฟัง ${Number(mistake.audioPlays || 0)} รอบ · ${Number(mistake.speakerCount || 1)} ผู้พูด · ${mistake.questionType || 'listening'}`
+        ? ` · ฟัง ${Number(mistake.audioPlays || 0)} รอบ · ${Number(mistake.speakerCount || 1)} ผู้พูด`
         : '';
-      return `<details class="mistake-card"><summary><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(mistake.date)} · ผิด ${mistake.count} ครั้ง${escapeHtml(listeningMeta)}</small></span><span class="details-arrow">⌄</span></summary><div class="mistake-body"><p><strong>โจทย์:</strong> ${escapeHtml(mistake.prompt)}</p><p class="wrong-answer"><strong>คำตอบที่เลือก:</strong> ${escapeHtml(mistake.selected)}</p><p class="right-answer"><strong>คำตอบที่ถูก:</strong> ${escapeHtml(mistake.correct)}</p><p><strong>เหตุผล:</strong> ${escapeHtml(mistake.explanation)}</p></div></details>`;
+      const timingMeta = mistake.responseSeconds ? ` · ${mistake.responseSeconds}s` : '';
+      const errorChips = (mistake.errorCodes || []).map((code) => `<span class="error-chip" title="${escapeAttr(code)}">${escapeHtml(errorCodeLabel(code))}</span>`).join('');
+      return `<details class="mistake-card"><summary><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(mistake.date)} · ผิด ${mistake.count} ครั้ง${escapeHtml(listeningMeta)}${escapeHtml(timingMeta)}</small></span><span class="details-arrow">⌄</span></summary><div class="mistake-body"><div class="feedback-meta"><span class="question-type-chip">${escapeHtml(questionTypeLabel(mistake.questionType || mistake.skill))}</span></div>${errorChips ? `<div class="error-chip-row">${errorChips}</div>` : ''}<p><strong>โจทย์:</strong> ${escapeHtml(mistake.prompt)}</p><p class="wrong-answer"><strong>คำตอบที่เลือก:</strong> ${escapeHtml(mistake.selected)}</p><p class="right-answer"><strong>คำตอบที่ถูก:</strong> ${escapeHtml(mistake.correct)}</p><p><strong>เหตุผล:</strong> ${escapeHtml(mistake.explanation)}</p></div></details>`;
     }).join('')}</div>`;
   }
 
@@ -1734,6 +2256,8 @@
       <div class="big-en" style="text-align:left">${escapeHtml(item.en)}</div>
       <div class="example-box"><div class="example-jp">${escapeHtml(item.example)}</div><div class="example-th">${escapeHtml(item.exampleTh)}</div></div>
       <div class="memory-tip"><span>🧷</span><span>${escapeHtml(item.tip)}</span></div>
+      ${item.collocations?.length ? `<div class="collocation-box"><strong>คำที่ใช้ร่วมกัน</strong><div>${item.collocations.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div></div>` : ''}
+      ${item.partOfSpeech ? `<p class="lexical-meta">ชนิดคำ: ${escapeHtml(item.partOfSpeech)}</p>` : ''}
       <p style="margin-top:12px">${escapeHtml(status)}</p>
       <div class="modal-actions"><button type="button" class="ghost-btn" data-speak="${escapeAttr(item.word + '。' + item.example)}">🔊 ฟังเสียง</button><button type="button" class="primary-btn" id="practiceSingleWord">ฝึกคำนี้</button></div>
       <button type="button" class="ghost-btn full" style="width:100%;margin-top:11px" data-close-modal="wordModal">ปิด</button>`;
@@ -1767,6 +2291,17 @@
       const avgSeconds = attempts ? Math.round(Number(stats[skill].totalSeconds || 0) / attempts) : 0;
       return `<div><div class="skill-row-header"><span>${SKILL_LABELS[skill].icon} ${escapeHtml(SKILL_LABELS[skill].th)}</span><strong>${attempts ? `${value}% · ${attempts} ข้อ${avgSeconds ? ` · ${avgSeconds}s/ข้อ` : ''}` : 'ยังไม่มีข้อมูล'}</strong></div><div class="progress-track"><div class="progress-fill ${classes[skill]}" style="width:${width}%"></div></div></div>`;
     }).join('');
+
+    const weakRows = TEXTBOOK.weakSubtypeRows(level, state, CONTENT, 8);
+    if ($('subtypeWeaknessList')) {
+      $('subtypeWeaknessList').innerHTML = weakRows.length ? weakRows.map((row, index) => {
+        const metric = row.kind === 'questionType'
+          ? (row.attempts ? `${row.accuracy}% · ${row.avgSeconds}s/ข้อ` : 'รอข้อมูลเพิ่ม')
+          : `พบซ้ำ ${row.count} ครั้ง`;
+        return `<div class="subtype-row"><span class="subtype-rank">${index + 1}</span><span><strong>${escapeHtml(row.label)}</strong><small>${row.kind === 'questionType' ? 'Question type' : 'Error pattern'} · ${escapeHtml(metric)}</small></span><span class="pressure-dot" style="--pressure:${Math.min(100, Math.round(row.pressure || 0))}%"></span></div>`;
+      }).join('') : '<div class="empty-state compact-empty"><div class="big">🧭</div><h3>ยังไม่มีจุดอ่อนรายประเภท</h3><p>ทำ Question Lab หรือ Daily Quest เพิ่ม ระบบจะจำสาเหตุที่ผิดให้</p></div>';
+    }
+
     $('progressWeightBars').innerHTML = weightBarsHtml(adaptive.weights);
 
     $('progressProjectedScore').textContent = ready.projection == null ? '—' : ready.projection;
@@ -1776,6 +2311,24 @@
     $('progressScoreText').textContent = ready.headline;
     $('progressScoreDetail').textContent = ready.description;
     $('progressTargetNote').textContent = `${level}: ผ่าน ${adaptive.config.overallPass} · เป้าซ้อม ${adaptive.config.safetyTarget}+`;
+
+    const ladderStages = TEXTBOOK.mockStages(CONTENT);
+    if ($('mockLadderList')) {
+      const ladderProgress = mockLadderProgress(level);
+      $('mockLadderList').innerHTML = ladderStages.map((stage) => {
+        const item = ladderProgress[stage.stage] || {};
+        const status = item.completed ? 'done' : item.attempts ? 'active' : '';
+        const focus = (stage.focus || []).map((type) => type === 'all' ? 'Mixed' : questionTypeLabel(type)).slice(0, 2).join(' · ');
+        const result = item.attempts ? `${item.bestAccuracy || 0}% ดีที่สุด · ${item.attempts} รอบ` : 'ยังไม่เริ่ม';
+        return `<button type="button" class="mock-ladder-row ${status}" data-mock-stage="${stage.stage}"><span class="mock-stage-number">${item.completed ? '✓' : stage.stage}</span><span><strong>${escapeHtml(stage.nameTh)}</strong><small>${escapeHtml(focus)} · ${escapeHtml(result)}</small></span><em>${stage.timing === 'exam_full' ? 'Full' : stage.timing === 'exam' ? 'Timed' : 'Practice'} ›</em></button>`;
+      }).join('');
+      $$('[data-mock-stage]', $('mockLadderList')).forEach((button) => {
+        button.onclick = () => {
+          const stage = ladderStages.find((item) => Number(item.stage) === Number(button.dataset.mockStage));
+          if (stage) startLesson(buildMockLadderLesson(stage));
+        };
+      });
+    }
 
     const mocks = [...state.mockScores].filter((mock) => mock.level === level).sort((a, b) => String(b.date).localeCompare(String(a.date)));
     if (!mocks.length) {
@@ -1827,6 +2380,15 @@
       });
     }
     renderContentStatus();
+    renderTextbookStatus();
+  }
+
+  function renderTextbookStatus() {
+    if (!$('textbookEngineStatus')) return;
+    const info = TEXTBOOK.versionInfo(CONTENT);
+    const levels = Array.isArray(TEXTBOOK_PACK.scopeLevels) ? TEXTBOOK_PACK.scopeLevels.join(' / ') : 'N5 / N4 / N3';
+    $('textbookEngineStatus').textContent = `พร้อมใช้งาน · Schema ${CONTENT.meta?.contentSchemaVersion || 3} · ${levels}`;
+    $('textbookEngineCounts').textContent = `${info.blueprints} Question types · ${info.errors} Error codes · ${info.contrastGroups} Contrast groups · ${info.practiceQuestions} Practice questions`;
   }
 
   function renderContentStatus() {
@@ -2218,7 +2780,7 @@
   }
 
   function exportProgress() {
-    const payload = { app: 'JLPT Coach N5-N1', appVersion: '2.2.0', schemaVersion: SCHEMA_VERSION, contentVersion: CONTENT.meta.version, exportedAt: new Date().toISOString(), state };
+    const payload = { app: 'JLPT Coach N5-N1', appVersion: '2.3.0', schemaVersion: SCHEMA_VERSION, contentVersion: CONTENT.meta.version, exportedAt: new Date().toISOString(), state };
     downloadBlob(JSON.stringify(payload, null, 2), `JLPT_Coach_Backup_${localISO()}.json`, 'application/json');
     showToast('Export progress แล้ว');
   }
@@ -2242,9 +2804,14 @@
             completedDates: imported.completedDates || {},
             srs: imported.srs || {},
             statsByLevel: normalizeStatsByLevel(imported.statsByLevel),
+            subtypeStatsByLevel: normalizeSubtypeStatsByLevel(imported.subtypeStatsByLevel),
             mistakes: Array.isArray(imported.mistakes) ? imported.mistakes : [],
             mockScores: Array.isArray(imported.mockScores) ? imported.mockScores : [],
             lessonHistory: Array.isArray(imported.lessonHistory) ? imported.lessonHistory : [],
+            pathProgress: imported.pathProgress && typeof imported.pathProgress === 'object' ? imported.pathProgress : {},
+            mockLadderProgress: imported.mockLadderProgress && typeof imported.mockLadderProgress === 'object' ? imported.mockLadderProgress : {},
+            topicSessionHistory: Array.isArray(imported.topicSessionHistory) ? imported.topicSessionHistory : [],
+            contentSchemaVersionSeen: Number(imported.contentSchemaVersionSeen || CONTENT.meta?.contentSchemaVersion || 1),
           };
         }
         saveState();

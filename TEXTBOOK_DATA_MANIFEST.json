@@ -1,0 +1,33 @@
+{
+  "packName": "JLPT Coach V2.3.0 Textbook Learning Engine Release",
+  "version": "2.3.0",
+  "buildDate": "2026-08-31",
+  "targetAppVersion": "2.3.0",
+  "compatibleFrom": "2.2.0",
+  "stateSchema": 3,
+  "releaseStatus": "production",
+  "coverage": {
+    "N5": "foundation grammar, learning path, question blueprint, readings/listenings",
+    "N4": "exam blueprint, grammar contrast, deep explanations, readings/listenings",
+    "N3": "topic/collocation path, grammar expansion, readings/listenings",
+    "N2": "general adaptive engine and existing starter content retained",
+    "N1": "general adaptive engine and existing starter content retained"
+  },
+  "counts": {
+    "vocab": 340,
+    "grammar": 143,
+    "readings": 62,
+    "listenings": 62,
+    "practiceQuestions": 267
+  },
+  "blueprints": 17,
+  "errorCodes": 35,
+  "contrastGroups": 16,
+  "learningPathStages": {
+    "N5": 8,
+    "N4": 10,
+    "N3": 12
+  },
+  "mockStages": 10,
+  "qaStatus": "PASS"
+}

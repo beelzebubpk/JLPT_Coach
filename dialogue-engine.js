@@ -166,12 +166,13 @@
     let rawLines;
     if (Array.isArray(input)) rawLines = input;
     else if (Array.isArray(input?.dialogue)) rawLines = input.dialogue;
+    else if (Array.isArray(input?.turns)) rawLines = input.turns;
     else rawLines = parseScript(input?.script ?? input);
 
     const speakerMap = new Map();
     const lines = [];
     rawLines.forEach((raw, lineIndex) => {
-      const speaker = String(raw?.speaker || raw?.role || 'ナレーター').trim() || 'ナレーター';
+      const speaker = String(raw?.speaker || raw?.speakerId || raw?.label || raw?.role || 'ナレーター').trim() || 'ナレーター';
       const text = String(raw?.text || raw?.line || '').trim();
       if (!text) return;
       if (!speakerMap.has(speaker)) {
