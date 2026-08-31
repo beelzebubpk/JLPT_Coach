@@ -1,12 +1,13 @@
 JLPT Coach N5–N1
-Version: 2.0.0
+Version: 2.1.1
 Build date: 2026-08-28
 Storage key: jlpt-coach-state-v2
+Content cache: licensed-content-2.1.1-20260828-1
 
 Core features:
-- N5–N1 target selection
-- Dynamic JLPT score fields by level
-- Adaptive study weights
+- N5–N1 target selection and adaptive score-based plan
 - Daily Quest, SRS, Mistake Log, Mock Test
 - Local auto-save and JSON backup
-- PWA offline support
+- Licensed/open Vocabulary and Kanji sync
+- Cumulative targets: N5 800/100, N4 1500/300, N3 3750/650, N2 6000/1000, N1 10000/2000
+- PWA offline support after first content sync

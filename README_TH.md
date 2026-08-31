@@ -1,120 +1,145 @@
-# JLPT Coach N5–N1 — Version 2
+# JLPT Coach N5–N1 — Version 2.1.1
 
-แอป PWA แบบ Mobile-first สำหรับผู้เรียน JLPT ตั้งแต่ N5 ถึง N1 โดยสร้างแผนเฉพาะบุคคลจากระดับเป้าหมาย คะแนนราย Section, Reference Information A/B/C, จุดอ่อนที่ผู้เรียนระบุ, เวลาที่เรียนได้, ผลการฝึก, SRS, Mistake Log และ Mock Test
+เวอร์ชันนี้ขยายระบบคลัง Vocabulary และ Kanji ของ JLPT Coach โดยใช้ชุดข้อมูลเปิดที่มีสัญญาอนุญาตชัดเจน และจัดเก็บคลังที่ประมวลผลแล้วไว้ใน IndexedDB ของอุปกรณ์ เพื่อให้ใช้งานออฟไลน์ได้หลังการซิงก์ครั้งแรก
 
-## สิ่งใหม่ใน Version 2
+## ขอบเขตที่ทำในเวอร์ชันนี้
 
-- เลือกระดับเป้าหมาย N5 / N4 / N3 / N2 / N1 ตั้งแต่ Onboarding
-- ช่องกรอกคะแนนเปลี่ยนตามโครงสร้างของระดับ
-  - N4/N5: Language Knowledge + Reading และ Listening
-  - N1/N2/N3: Language Knowledge, Reading และ Listening
-- วิเคราะห์คะแนนรวมและ Section minimum แยกกัน
-- คำนวณ Study Weight แบบ Adaptive สำหรับ Vocabulary/Kanji, Grammar, Reading และ Listening
-- Daily Quest เปลี่ยนตามคะแนน ข้อผิด ความแม่นยำ เวลาในการตอบ และจำนวนวันที่เหลือ
-- Progress แยกตามระดับ ผู้ใช้สลับเป้าหมายได้โดยข้อมูลระดับเดิมไม่หาย
-- เพิ่มผลสอบจริงหลายครั้ง และบันทึก Mock Test แยกตามระดับ
-- Local auto-save, Export/Import JSON และ Offline PWA
-- รองรับการย้าย Progress จาก N4 Sprint Version 1 เมื่อใช้ URL/Origin เดิม
+| ระดับเป้าหมาย | Vocabulary สะสม | Kanji สะสม |
+|---|---:|---:|
+| N5 | 800 | 100 |
+| N4 | 1,500 | 300 |
+| N3 | 3,750 | 650 |
+| N2 | 6,000 | 1,000 |
+| N1 | 10,000 | 2,000 |
 
-## คลังเนื้อหาใน Release นี้
+ตัวเลขเป็นเป้าหมายเชิงประมาณการของแอป ไม่ใช่รายการทางการของ JLPT เนื่องจากผู้จัดสอบไม่ได้เผยแพร่รายการ Vocabulary, Kanji และ Grammar อย่างเป็นทางการสำหรับระบบข้อสอบหลังปี 2010
 
-- N4: คลังเต็มจาก N4 Sprint เดิม — Vocabulary 180, Grammar 41, Reading 20, Listening 20
-- N5 / N3 / N2 / N1: Starter Pack ต่อระดับ — Vocabulary 40, Grammar 15, Reading 6, Listening 6
+## ประเด็นสำคัญเรื่อง “ข้อสอบย้อนหลัง 5 ปี”
 
-Adaptive Engine รองรับทุกระดับแล้ว แต่ Starter Pack ของ N5/N3/N2/N1 เป็นฐานเริ่มต้นสำหรับ Version 2 และสามารถขยาย `content.json` / `data.js` เพิ่มโดยไม่ต้องเปลี่ยนระบบหลัก
+แอปนี้ **ไม่ได้คัดลอกหรือรวมข้อสอบจริงย้อนหลัง 5 ปี** เพราะข้อสอบจริงแต่ละรอบไม่ได้ถูกเผยแพร่ครบชุดอย่างเป็นทางการ และลิขสิทธิ์ข้อสอบเป็นของผู้จัดสอบ JLPT การอัปเดตนี้จึงใช้แนวทางที่ปลอดภัยกว่า:
 
-## ไฟล์สำคัญ
+1. ใช้แหล่ง Vocabulary/Kanji แบบเปิดและมี License
+2. รวมและลบรายการซ้ำ
+3. จัดลำดับเป็นเป้าหมายสะสม N5 → N1
+4. รักษาโจทย์เดิมของ JLPT Coach ที่สร้างขึ้นเพื่อการฝึก
+5. ใช้ประเภทโจทย์ทางการของ JLPT เป็นแนวทางในอนาคต แต่ไม่ทำสำเนาข้อสอบจริง
 
-- `index.html` — หน้าแอป
-- `styles.css` — UI/Responsive/Dark mode
-- `data.js` — คลังเนื้อหาที่ Browser โหลด
-- `content.json` — คลังเนื้อหารูปแบบ JSON สำหรับแก้ไข/ขยาย
-- `app.js` — Adaptive Engine, SRS, Mistake Log, Local Save และ UI logic
-- `manifest.webmanifest` — ข้อมูลติดตั้ง PWA
-- `sw.js` — Offline cache
-- `assets/` — Icon ของแอป
-- `JLPT_Coach_V2_Standalone.html` — รุ่นไฟล์เดียวสำหรับทดลอง
+อ่านรายละเอียดได้ที่ `SOURCE_AUDIT_2021_2025_TH.md`
 
-## ติดตั้งผ่าน GitHub Pages
+## แหล่งข้อมูลที่ใช้
 
-1. แตกไฟล์ ZIP
-2. อัปโหลด **เนื้อหาภายในโฟลเดอร์ทั้งหมด** ไปยัง Root ของ GitHub repository
-3. ตรวจว่า `index.html` อยู่หน้าแรกของ repository
-4. ไปที่ `Settings → Pages`
-5. เลือก `Deploy from a branch`
-6. เลือก `main` และ `/(root)` แล้ว Save
-7. เปิด URL ที่ GitHub Pages สร้างให้ด้วย Safari บน iPhone
-8. กด `Share → Add to Home Screen`
-9. เปิดแอปครั้งแรกขณะมีอินเทอร์เน็ต เพื่อให้ Service Worker เก็บ Offline cache
+### OpenJLPT
 
-## อัปเดตจาก N4 Sprint เดิม
+- เว็บไซต์: https://github.com/evanclan/OpenJLPT
+- License: CC BY-SA 4.0
+- ใช้: Vocabulary, Kanji, คำอ่าน, English meanings และตัวอย่างประโยคเมื่อมี
 
-### วิธีที่รักษา Local Progress ได้ง่ายที่สุด
+### WordMaster Word Lists
 
-ใช้ repository และ URL เดิม:
+- เว็บไซต์: https://github.com/lratusa/wordmaster-wordlists
+- License: MIT
+- ใช้: Vocabulary และ Kanji เพิ่มเติมเพื่อขยาย Coverage
+- หมายเหตุ: บางรายการเป็นคำแปลภาษาจีน ระบบจึงจำกัดรายการเหล่านั้นไว้กับโหมด Reading/Audio เมื่อไม่สามารถยืนยันว่าเป็น English meaning
 
-1. ใน N4 Sprint เดิม เข้า Settings แล้ว Export Progress ก่อน
-2. อัปโหลดไฟล์ Version 2 ทับไฟล์เดิมใน repository
-3. รอ GitHub Pages Deploy
-4. เปิด URL เดิมใน Safari แล้ว Refresh
-5. เปิดจาก Home Screen อีกครั้ง
+### Open Anki JLPT Decks
 
-Version 2 จะตรวจ Local Storage key ของ N4 Sprint เดิมและย้าย XP, Streak, SRS, Mistake Log, Mock score และข้อมูล N4 ที่รองรับเข้าสู่ระบบใหม่อัตโนมัติ
+- เว็บไซต์: https://github.com/jamsinclair/open-anki-jlpt-decks
+- License: MIT
+- ใช้: Vocabulary เสริมเพื่อเพิ่มจำนวน Unique words และลดความเสี่ยงที่คลัง N1 จะไม่ถึงเป้าหมาย 10,000 คำ
 
-### กรณีใช้ repository หรือ URL ใหม่
+ดูรายละเอียดสัญญาอนุญาตได้ที่ `CONTENT_LICENSES.md`
 
-Local Storage จะไม่ตามไปเอง เพราะถือเป็นเว็บไซต์คนละ Origin ให้ใช้:
+## กลไกการซิงก์
 
-1. Export Progress จากแอปเดิม
-2. เปิด Version 2
-3. ไปที่ Profile → Import Progress
-4. เลือกไฟล์ JSON ที่ Export ไว้
+เมื่อเปิด Version 2.1.1 ครั้งแรกขณะออนไลน์:
 
-## Auto Save และความเป็นส่วนตัว
+1. แอปดาวน์โหลดข้อมูลจากแหล่งเปิดผ่าน jsDelivr
+2. หาก jsDelivr ไม่สำเร็จ จะลอง Raw GitHub เป็นแหล่งสำรอง
+3. Normalize Schema ของแต่ละแหล่งให้เป็นรูปแบบเดียวกัน
+4. ลบรายการซ้ำด้วย `word + reading` สำหรับ Vocabulary และตัวอักษรสำหรับ Kanji
+5. รักษาเนื้อหา Starter/Curated เดิมของ JLPT Coach ไว้เป็นลำดับแรก
+6. ตัดจำนวนสะสมตามเป้าหมายของแต่ละระดับ
+7. เก็บคลังที่เสร็จแล้วไว้ใน IndexedDB
+8. การเปิดครั้งต่อไปใช้คลัง Offline ในเครื่อง
 
-- แอปบันทึกอัตโนมัติใน Local Storage หลังตอบคำถาม จบบทเรียน เปลี่ยน Settings เพิ่มคะแนน หรือแก้ Profile
-- ไม่มี Login และไม่มี Backend
-- ผู้ใช้หลายคนเปิด URL เดียวกันจากคนละเครื่อง จะมี Save แยกกัน
-- การลบ Safari Website Data, ลบข้อมูลเว็บไซต์ หรือ Reset ในแอปจะลบ Progress ของเครื่องนั้น
-- แนะนำ Export Backup อย่างน้อยสัปดาห์ละครั้ง
+หากดาวน์โหลดไม่สำเร็จ แอปจะเปิดด้วย Starter Pack เดิม และสามารถกด `โปรไฟล์ → ซิงก์คลังใหม่` เมื่อมีอินเทอร์เน็ต
 
-## Adaptive Plan ใช้ข้อมูลอะไร
+## ไฟล์ที่เพิ่มหรือแก้ไข
 
-1. คะแนนสอบล่าสุดในระดับเป้าหมาย
-2. คะแนนระดับใกล้เคียงเมื่อยังไม่มีคะแนนตรงระดับ
-3. Reference Information A/B/C
-4. Self-assessment เช่น Vocabulary, Kanji, Reading, Listening หรือ Speed
-5. Accuracy และเวลาตอบแยกทักษะ
-6. Mistake Log และจำนวนครั้งที่ผิดซ้ำ
-7. SRS due items
-8. จำนวนวันถึงวันสอบ
-9. Mock Test ล่าสุด
+- `content-config.js` — เป้าหมายจำนวน แหล่งข้อมูล URL และ Content Cache Version
+- `content-engine.js` — Normalize, Merge, Deduplicate และจัด Coverage N5–N1
+- `content-loader.js` — ดาวน์โหลด JSON/CSV, Cache ใน IndexedDB และ Offline fallback
+- `app.js` — ใช้ Vocabulary + Kanji pack แบบสะสมตามระดับ
+- `index.html` — หน้าสถานะและปุ่มซิงก์คลัง
+- `styles.css` — UI สำหรับสถานะ Content Sync
+- `sw.js` — Offline app-shell cache และ Cache Version ใหม่
+- `manifest.webmanifest` — Metadata ของ PWA
+- `VERSION.txt` — เลขเวอร์ชัน
+- `CONTENT_LICENSES.md` — Attribution และ License
+- `SOURCE_AUDIT_2021_2025_TH.md` — ขอบเขตการวิจัยข้อสอบย้อนหลัง
+- `CONTENT_SOURCES.json` — Source/target metadata สำหรับตรวจสอบด้วยโปรแกรม
 
-ทักษะทุกด้านมี Maintenance floor เพื่อไม่ให้ระบบตัดทักษะใดออกทั้งหมด แต่จุดอ่อนจะได้รับสัดส่วนเวลามากกว่า
+`data.js` และ `content.json` ยังคงเป็น Starter Pack ที่มากับแอป ไม่จำเป็นต้องแทนที่ในการอัปเดตแบบ Replacement Pack
 
-## การเตือนบน iPhone
+## วิธี Replace บน GitHub Pages
 
-Browser Notification ไม่ควรถูกถือว่าเป็น Push Notification ที่รับประกันเมื่อปิดแอปทั้งหมด วิธีที่เสถียรกว่าคือกดดาวน์โหลด `.ics` ในหน้า Profile แล้วเพิ่มกิจกรรมรายวันลง Apple Calendar
+ก่อนอัปเดต:
+
+1. เปิดแอปเดิม
+2. ไปที่ Profile/Settings
+3. กด Export Progress
+4. เก็บไฟล์ JSON ไว้ใน iCloud Drive
+
+จากนั้น:
+
+1. แตกไฟล์ `JLPT_Coach_V2_1_1_Content_Replacement.zip`
+2. เข้า GitHub Repository เดิม
+3. อัปโหลดไฟล์ทั้งหมดใน ZIP ทับไฟล์ชื่อเดิมที่ Root ของ Repository
+4. Commit changes
+5. รอ GitHub Pages Deploy
+6. เปิด URL เดิมด้วย Safari ขณะออนไลน์
+7. Refresh หน้าเว็บหนึ่งครั้ง
+8. ปิด N4/JLPT Coach จาก App Switcher แล้วเปิดใหม่จาก Home Screen
+9. ไปที่ `โปรไฟล์ → คลังเนื้อหา N5–N1`
+10. กด `ซิงก์คลังใหม่`
+11. รอจนสถานะแสดง `พร้อมใช้งาน`
+
+ไม่ต้องลบ Icon จาก Home Screen และไม่ต้องสร้าง Repository ใหม่
+
+## Auto Save และ Progress เดิม
+
+การแทนที่ไฟล์ใน Repository เดิมจะไม่ลบ Local Progress ตราบใดที่:
+
+- ใช้ GitHub Pages URL เดิม
+- ไม่ลบ Safari Website Data
+- ไม่กด Reset ในแอป
+- ไม่เปลี่ยน Storage key `jlpt-coach-state-v2`
+
+ข้อมูล Profile, XP, Streak, SRS, Mistake Log, Mock Test และคะแนนยังเก็บแยกในเครื่องของผู้ใช้แต่ละคนเหมือนเดิม
+
+## ข้อควรทราบเกี่ยวกับภาษา
+
+- เนื้อหา Curated เดิมยังมีคำอธิบายภาษาไทย
+- คลังขนาดใหญ่ที่นำเข้าเป็น English-first
+- WordMaster บางรายการอาจมี Chinese translation และจะไม่ถูกใช้สร้างคำถาม Meaning หากระบบตรวจไม่พบข้อความภาษาอังกฤษที่เพียงพอ
+- การเพิ่มคำแปลไทยครบ 10,000+ คำควรทำเป็นโครงการแยก พร้อมกระบวนการตรวจคุณภาพโดยผู้สอนภาษาญี่ปุ่น
+
+## การอัปเดตคลังในอนาคต
+
+เมื่อแหล่งข้อมูลต้นทางได้รับการแก้ไข ผู้ดูแลสามารถเพิ่มเลข `version` และ `cache.key` ใน `content-config.js` แล้วเปลี่ยน `CACHE_NAME` ใน `sw.js` เพื่อบังคับให้แอปสร้างคลังใหม่ โดยไม่ต้องเปลี่ยน Adaptive Engine หรือข้อมูล Progress
+
+## การทดสอบที่ดำเนินการ
+
+- JavaScript syntax check ของ `app.js`, `content-config.js`, `content-engine.js`, `content-loader.js` และ `sw.js`
+- JSON validation ของ `manifest.webmanifest` และ `CONTENT_SOURCES.json`
+- Unit test ด้วยข้อมูลจำลองมากกว่า 10,000 Vocabulary และ 2,000 Kanji
+- ยืนยันจำนวนสะสมเป้าหมาย 800/1,500/3,750/6,000/10,000 และ 100/300/650/1,000/2,000
+- ยืนยันการลบรายการซ้ำและ Stable ID
+- ยืนยันว่า Starter content เดิมมี Priority สูงสุดเพื่อรักษา SRS ID เดิม
 
 ## ข้อจำกัด
 
-- คลังข้อสอบเป็นเนื้อหาฝึกที่สร้างขึ้น ไม่ใช่ข้อสอบทางการของ JLPT
-- Projected Score และ Readiness เป็นตัวช่วยติดตาม ไม่ใช่การรับรองผลสอบ
-- Listening ใช้ Japanese Text-to-Speech ของอุปกรณ์ ไม่ใช่เสียงผู้พูดหลายคนแบบข้อสอบจริง
-- รุ่น Standalone อาจเก็บ Local Storage จากไฟล์ local ไม่เสถียรเท่า PWA ที่เปิดผ่าน HTTPS
-- คลัง N5/N3/N2/N1 ใน Version 2 เป็น Starter Pack และควรเพิ่มเนื้อหาก่อนใช้เป็นหลักสูตรระยะยาวเต็มรูปแบบ
-
-## การทดสอบ Release
-
-ทดสอบแล้วกับ Mobile viewport 390 × 844:
-
-- Onboarding 4 ขั้น
-- เลือก N5–N1
-- Dynamic score fields 2 หรือ 3 Section ตามระดับ
-- Adaptive analysis preview
-- Daily Quest และ Priority weighting
-- Quick lesson, answer grading และคำอธิบายข้อผิด
-- Mock/result forms
-- Responsive mobile UI
-- ไม่มี JavaScript page error ใน flow หลักที่ทดสอบ
-
+- จำนวนจริงหลังซิงก์อาจต่ำกว่าเป้าหมายหากแหล่งข้อมูลภายนอกบางแหล่งใช้งานไม่ได้ หรือจำนวน Unique items หลังลบซ้ำไม่พอ แอปจะแสดงจำนวนจริงและ Error count
+- รายการระดับ JLPT เป็นการจัดหมวดจากแหล่งชุมชน/ชุดข้อมูลเปิด ไม่ใช่รายการรับรองจากผู้จัดสอบ
+- Version นี้เพิ่ม Vocabulary/Kanji เป็นหลัก Grammar, Reading และ Listening ยังคงใช้คลังเดิม
+- Projected Score และ Readiness เป็นตัวช่วยเรียน ไม่ใช่การรับรองผลสอบ

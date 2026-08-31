@@ -1,7 +1,7 @@
-(() => {
+(async () => {
   'use strict';
 
-  const CONTENT = window.JLPT_CONTENT;
+  const CONTENT = window.JLPT_CONTENT_READY ? await window.JLPT_CONTENT_READY : window.JLPT_CONTENT;
   if (!CONTENT) {
     document.body.innerHTML = '<p style="padding:24px">ไม่พบข้อมูลแอป กรุณาเปิด index.html พร้อม data.js</p>';
     return;
@@ -35,7 +35,8 @@
     ['🧠', 'จุดแข็งใช้ Maintenance', 'ทักษะที่ดีอยู่แล้วจะยังถูกฝึก แต่ใช้เวลาน้อยกว่าเพื่อเปิดพื้นที่ให้จุดอ่อน'],
   ];
 
-  const VOCAB_BY_ID = new Map(CONTENT.vocab.map((item) => [item.id, item]));
+  const STUDY_ITEMS = [...(CONTENT.vocab || []), ...(CONTENT.kanjiStudyItems || [])];
+  const VOCAB_BY_ID = new Map(STUDY_ITEMS.map((item) => [item.id, item]));
   const GRAMMAR_BY_ID = new Map(CONTENT.grammar.map((item) => [item.id, item]));
   const READING_BY_ID = new Map(CONTENT.readings.map((item) => [item.id, item]));
   const LISTENING_BY_ID = new Map(CONTENT.listenings.map((item) => [item.id, item]));
@@ -274,8 +275,20 @@
     return CONTENT.meta.scoring[level] || CONTENT.meta.scoring.N4;
   }
 
+  function isWithinTargetLevel(itemLevel, targetLevel = state.profile.targetLevel) {
+    return (LEVEL_RANK[itemLevel] || 99) <= (LEVEL_RANK[targetLevel] || 0);
+  }
+
   function levelVocab(level = state.profile.targetLevel) {
-    return CONTENT.vocab.filter((item) => item.level === level);
+    return STUDY_ITEMS.filter((item) => isWithinTargetLevel(item.level, level));
+  }
+
+  function levelLexicalVocab(level = state.profile.targetLevel) {
+    return (CONTENT.vocab || []).filter((item) => isWithinTargetLevel(item.level, level));
+  }
+
+  function levelKanji(level = state.profile.targetLevel) {
+    return (CONTENT.kanji || []).filter((item) => isWithinTargetLevel(item.level, level));
   }
 
   function levelGrammar(level = state.profile.targetLevel) {
@@ -517,7 +530,7 @@
 
   function getDueItems(level = state.profile.targetLevel, date = localISO()) {
     return Object.entries(state.srs)
-      .filter(([id, srs]) => VOCAB_BY_ID.get(id)?.level === level && srs.due <= date)
+      .filter(([id, srs]) => isWithinTargetLevel(VOCAB_BY_ID.get(id)?.level, level) && srs.due <= date)
       .map(([id, srs]) => ({ item: VOCAB_BY_ID.get(id), srs }))
       .sort((a, b) => {
         if (a.srs.due !== b.srs.due) return a.srs.due.localeCompare(b.srs.due);
@@ -529,7 +542,7 @@
 
   function getWeakItems(level = state.profile.targetLevel) {
     return Object.entries(state.srs)
-      .filter(([id]) => VOCAB_BY_ID.get(id)?.level === level)
+      .filter(([id]) => isWithinTargetLevel(VOCAB_BY_ID.get(id)?.level, level))
       .map(([id, srs]) => ({ item: VOCAB_BY_ID.get(id), srs }))
       .filter(({ srs }) => (srs.attempts >= 1 && srs.correct / srs.attempts < 0.72) || srs.lapses >= 1)
       .sort((a, b) => {
@@ -604,7 +617,7 @@
   function distractorPool(item) {
     const sameLevel = levelVocab(item.level).filter((candidate) => candidate.id !== item.id);
     const sameTheme = sameLevel.filter((candidate) => candidate.theme === item.theme);
-    const adjacent = CONTENT.vocab.filter((candidate) => candidate.id !== item.id && Math.abs(LEVEL_RANK[candidate.level] - LEVEL_RANK[item.level]) <= 1);
+    const adjacent = STUDY_ITEMS.filter((candidate) => candidate.id !== item.id && Math.abs(LEVEL_RANK[candidate.level] - LEVEL_RANK[item.level]) <= 1);
     return uniqueBy([
       ...seededShuffle(sameTheme, `${item.id}-theme`),
       ...seededShuffle(sameLevel, `${item.id}-same`),
@@ -613,8 +626,11 @@
   }
 
   function makeVocabQuestion(item, seed, forcedMode = null) {
-    const modes = ['meaning', 'reading', 'context', 'audio'];
-    const mode = forcedMode || modes[hashString(seed) % modes.length];
+    const defaultModes = ['meaning', 'reading', 'context', 'audio'];
+    const availableModes = (Array.isArray(item.availableModes) ? item.availableModes : defaultModes)
+      .filter((candidate) => candidate !== 'context' || (item.example && item.exampleTh));
+    const modes = availableModes.length ? availableModes : ['reading'];
+    const mode = forcedMode && modes.includes(forcedMode) ? forcedMode : modes[hashString(seed) % modes.length];
     const pool = distractorPool(item).slice(0, 16);
     let optionData;
     let prompt;
@@ -645,7 +661,7 @@
     }
 
     return {
-      type: 'question', level: item.level, skill: 'vocab', subtype: mode, itemId: item.id,
+      type: 'question', level: state.profile.targetLevel, itemLevel: item.level, skill: 'vocab', subtype: mode, itemId: item.id,
       kicker: `${item.level} · ${mode === 'reading' ? 'KANJI READING' : mode === 'context' ? 'CONTEXT' : mode === 'audio' ? 'LISTEN & CHOOSE' : 'VOCABULARY'}`,
       prompt, hint, options: optionData.options, optionNotes: optionData.notes, answer: optionData.answer,
       speakText,
@@ -654,7 +670,7 @@
   }
 
   function makeIntroCard(item) {
-    return { type: 'intro', level: item.level, skill: 'vocab', itemId: item.id };
+    return { type: 'intro', level: state.profile.targetLevel, itemLevel: item.level, skill: 'vocab', itemId: item.id };
   }
 
   function makeGrammarCard(item) {
@@ -1218,13 +1234,13 @@
   }
 
   function learnedCount(level = state.profile.targetLevel) {
-    return Object.keys(state.srs).filter((id) => VOCAB_BY_ID.get(id)?.level === level).length;
+    return Object.keys(state.srs).filter((id) => isWithinTargetLevel(VOCAB_BY_ID.get(id)?.level, level)).length;
   }
 
   function masteredCount(level = state.profile.targetLevel) {
     return Object.entries(state.srs).filter(([id, srs]) => {
       const item = VOCAB_BY_ID.get(id);
-      return item?.level === level
+      return isWithinTargetLevel(item?.level, level)
         && Number(srs.interval || 0) >= 7
         && Number(srs.attempts || 0) >= 2
         && Number(srs.correct || 0) / Number(srs.attempts || 1) >= 0.75;
@@ -1449,10 +1465,10 @@
     const countsByTheme = {};
     Object.keys(state.srs).forEach((id) => {
       const item = VOCAB_BY_ID.get(id);
-      if (item?.level === level) countsByTheme[item.theme] = (countsByTheme[item.theme] || 0) + 1;
+      if (item && isWithinTargetLevel(item.level, level)) countsByTheme[item.theme] = (countsByTheme[item.theme] || 0) + 1;
     });
     const themes = uniqueBy(vocab.map((item) => item.theme), (theme) => theme);
-    $('contentCountLabel').textContent = `${vocab.length} คำ · ${levelGrammar(level).length} Grammar · ${levelReadings(level).length} Reading · ${levelListenings(level).length} Listening`;
+    $('contentCountLabel').textContent = `${levelLexicalVocab(level).length.toLocaleString()} Vocabulary · ${levelKanji(level).length.toLocaleString()} Kanji · ${levelGrammar(level).length} Grammar · ${levelReadings(level).length} Reading · ${levelListenings(level).length} Listening`;
     $('themeList').innerHTML = themes.map((theme) => {
       const label = CONTENT.themeLabels[theme] || { icon: '🗂️', th: theme };
       const total = vocab.filter((item) => item.theme === theme).length;
@@ -1614,6 +1630,30 @@
         };
       });
     }
+    renderContentStatus();
+  }
+
+  function renderContentStatus() {
+    if (!$('contentSyncStatus')) return;
+    const level = state.profile.targetLevel;
+    const sync = CONTENT.meta?.contentSync || {};
+    const managerStatus = window.JLPTContentManager?.status?.() || {};
+    const vocabCount = levelLexicalVocab(level).length;
+    const kanjiCount = levelKanji(level).length;
+    const target = sync.targets?.[level] || {};
+    const complete = Boolean(sync.complete);
+    const sourceLabel = managerStatus.source === 'cache'
+      ? 'คลังออฟไลน์ในเครื่อง'
+      : managerStatus.source === 'network'
+        ? 'ซิงก์จากแหล่งข้อมูลเปิดแล้ว'
+        : 'Starter Pack';
+    $('contentSyncStatus').textContent = `${complete ? 'พร้อมใช้งาน' : 'ยังไม่ครบ'} · ${sourceLabel}`;
+    $('contentSyncStatus').className = `setting-desc content-status ${complete ? 'complete' : 'partial'}`;
+    $('contentSyncCounts').textContent = `${level}: ${vocabCount.toLocaleString()} Vocabulary / ${kanjiCount.toLocaleString()} Kanji${target.vocab ? ` · เป้าหมาย ${Number(target.vocab).toLocaleString()} / ${Number(target.kanji || 0).toLocaleString()}` : ''}`;
+    const errorCount = Array.isArray(sync.fetchErrors) ? sync.fetchErrors.length : 0;
+    $('contentSyncDetail').textContent = `${sync.noteTh || 'คลังเนื้อหาพร้อมใช้งาน'}${errorCount ? ` · มีแหล่งโหลดไม่สำเร็จ ${errorCount} รายการ` : ''}`;
+    $('contentLicenseNote').textContent = (CONTENT.meta?.attributions || [])
+      .map((item) => `${item.name} (${item.license})`).join(' · ') || 'Starter content ของ JLPT Coach';
   }
 
   function renderSettings() {
@@ -2104,6 +2144,25 @@
 
     $('notificationBtn').onclick = requestNotification;
     $('calendarBtn').onclick = downloadICS;
+    if ($('refreshContentBtn')) {
+      $('refreshContentBtn').onclick = async () => {
+        const button = $('refreshContentBtn');
+        if (!window.JLPTContentManager) { showToast('ไม่พบ Content Manager'); return; }
+        button.disabled = true;
+        button.textContent = 'กำลังซิงก์…';
+        $('contentSyncDetail').textContent = 'กำลังดาวน์โหลดและจัดคลัง N5–N1 โปรดเปิดอินเทอร์เน็ตไว้';
+        try {
+          await window.JLPTContentManager.refresh();
+          button.textContent = 'กำลังเปิดใหม่…';
+          window.location.reload();
+        } catch (error) {
+          console.warn(error);
+          button.disabled = false;
+          button.textContent = 'ซิงก์คลังใหม่';
+          showToast('ซิงก์ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ต');
+        }
+      };
+    }
     $('exportBtn').onclick = exportProgress;
     $('importBtn').onclick = () => $('importFile').click();
     $('importFile').onchange = () => { if ($('importFile').files?.[0]) importProgress($('importFile').files[0]); $('importFile').value = ''; };

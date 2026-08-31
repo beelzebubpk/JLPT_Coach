@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "2.1.1",
+  "buildDate": "2026-08-28",
+  "scope": "Licensed/open vocabulary and kanji coverage; no complete official past examinations are reproduced.",
+  "targetsAreCumulative": true,
+  "targets": {
+    "N5": { "vocabulary": 800, "kanji": 100 },
+    "N4": { "vocabulary": 1500, "kanji": 300 },
+    "N3": { "vocabulary": 3750, "kanji": 650 },
+    "N2": { "vocabulary": 6000, "kanji": 1000 },
+    "N1": { "vocabulary": 10000, "kanji": 2000 }
+  },
+  "sources": [
+    {
+      "id": "openjlpt",
+      "name": "OpenJLPT",
+      "homepage": "https://github.com/evanclan/OpenJLPT",
+      "license": "CC BY-SA 4.0",
+      "formats": ["JSON"],
+      "content": ["vocabulary", "kanji", "examples"]
+    },
+    {
+      "id": "wordmaster",
+      "name": "WordMaster Word Lists",
+      "homepage": "https://github.com/lratusa/wordmaster-wordlists",
+      "license": "MIT",
+      "formats": ["JSON"],
+      "content": ["vocabulary", "kanji"]
+    },
+    {
+      "id": "openanki",
+      "name": "Open Anki JLPT Decks",
+      "homepage": "https://github.com/jamsinclair/open-anki-jlpt-decks",
+      "license": "MIT",
+      "formats": ["CSV"],
+      "content": ["vocabulary"]
+    }
+  ],
+  "officialReference": {
+    "purpose": "Question-type and copyright boundary only",
+    "homepage": "https://www.jlpt.jp/e/",
+    "pastExamCorpusIncluded": false
+  }
+}

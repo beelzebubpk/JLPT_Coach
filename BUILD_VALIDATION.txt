@@ -1,0 +1,27 @@
+JLPT Coach V2.1.1 Build Validation
+Date: 2026-08-28
+
+Checks completed:
+- JavaScript syntax: PASS
+  app.js
+  content-config.js
+  content-engine.js
+  content-loader.js
+  sw.js
+- JSON validation: PASS
+  manifest.webmanifest
+  CONTENT_SOURCES.json
+- CSV parser quoted-field test: PASS
+- Content merge unit test: PASS
+- Stable curated-item ID preservation test: PASS
+- Synthetic cumulative coverage test: PASS
+
+Expected cumulative coverage after successful licensed-content sync:
+N5: 800 Vocabulary / 100 Kanji
+N4: 1,500 Vocabulary / 300 Kanji
+N3: 3,750 Vocabulary / 650 Kanji
+N2: 6,000 Vocabulary / 1,000 Kanji
+N1: 10,000 Vocabulary / 2,000 Kanji
+
+Note:
+Actual first-run network retrieval could not be bundled into this static archive. The PWA performs the licensed-source download on the user's device and shows actual counts and source errors in Profile.

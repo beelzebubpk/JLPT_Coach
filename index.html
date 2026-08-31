@@ -15,6 +15,15 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="content-boot" id="contentBootOverlay" role="status" aria-live="polite">
+    <div class="content-boot-card">
+      <div class="content-boot-mascot" data-mascot="wave" aria-hidden="true"></div>
+      <div class="content-boot-spinner" aria-hidden="true"></div>
+      <h1 id="contentBootTitle">กำลังเปิด JLPT Coach</h1>
+      <p id="contentBootNote">ตรวจคลังเนื้อหาในเครื่อง…</p>
+      <small>ครั้งแรกที่ซิงก์คลังขยายต้องใช้อินเทอร์เน็ต หลังจากนั้นใช้งานออฟไลน์ได้</small>
+    </div>
+  </div>
   <div class="app-shell" id="appShell">
     <header class="topbar">
       <div class="brand">
@@ -195,6 +204,14 @@
           <div class="setting-row" id="installRow"><div><div class="setting-title">ติดตั้งบนหน้าจอมือถือ</div><div class="setting-desc" id="installDesc">บน iPhone ใช้ Safari → Share → Add to Home Screen</div></div><button type="button" class="primary-btn small-btn" id="installBtn">ติดตั้ง</button></div>
         </article>
 
+        <div class="section-title-row"><h3>คลังเนื้อหา N5–N1</h3><span class="section-note">Licensed Content Sync</span></div>
+        <article class="settings-card card">
+          <div class="setting-row"><div><div class="setting-title">สถานะคลัง</div><div class="setting-desc content-status" id="contentSyncStatus">กำลังตรวจสอบ…</div></div><button type="button" class="secondary-btn small-btn" id="refreshContentBtn">ซิงก์คลังใหม่</button></div>
+          <div class="setting-row content-info-row"><div><div class="setting-title">จำนวนระดับปัจจุบัน</div><div class="setting-desc" id="contentSyncCounts">—</div></div></div>
+          <div class="setting-row content-info-row"><div><div class="setting-title">รายละเอียด</div><div class="setting-desc" id="contentSyncDetail">ใช้คลังเปิดและเก็บสำเนาในเครื่อง</div></div></div>
+          <div class="setting-row content-info-row"><div><div class="setting-title">ที่มาและสัญญาอนุญาต</div><div class="setting-desc" id="contentLicenseNote">OpenJLPT / WordMaster / Open Anki JLPT</div></div></div>
+        </article>
+
         <div class="section-title-row"><h3>สำรองข้อมูล</h3></div>
         <article class="settings-card card">
           <div class="setting-row"><div><div class="setting-title">Export progress</div><div class="setting-desc">สำรอง Profile, SRS, ข้อผิด และคะแนน</div></div><button type="button" class="ghost-btn small-btn" id="exportBtn">Export</button></div>
@@ -202,8 +219,8 @@
           <div class="setting-row"><div><div class="setting-title">เริ่มใหม่ทั้งหมด</div><div class="setting-desc">ลบข้อมูล Local ของแอปนี้ในเครื่อง</div></div><button type="button" class="danger-btn small-btn" id="resetBtn">Reset</button></div>
         </article>
 
-        <div class="section-title-row"><h3>เกี่ยวกับ Version 2</h3></div>
-        <article class="card about-note" id="aboutNote">รองรับ N5–N1, รูปแบบคะแนนตามระดับ, Adaptive Plan, SRS, Mistake Log และ Local Save โดยไม่ต้องมีบัญชีผู้ใช้ ข้อมูลของคนละเครื่องจะแยกจากกัน</article>
+        <div class="section-title-row"><h3>เกี่ยวกับ Version 2.1.1</h3></div>
+        <article class="card about-note" id="aboutNote">รองรับ N5–N1, Adaptive Plan, SRS, Mistake Log, Local Save และคลัง Vocabulary/Kanji แบบซิงก์จากแหล่งข้อมูลเปิด โดยไม่คัดลอกข้อสอบจริง ข้อมูลของคนละเครื่องจะแยกจากกัน</article>
       </section>
     </main>
 
@@ -310,6 +327,9 @@
   <div class="confetti hidden" id="confetti" aria-hidden="true"></div>
 
   <script src="data.js"></script>
+  <script src="content-config.js"></script>
+  <script src="content-engine.js"></script>
+  <script src="content-loader.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

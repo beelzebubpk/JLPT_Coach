@@ -1,7 +1,7 @@
 {
   "name": "JLPT Coach N5–N1",
   "short_name": "JLPT Coach",
-  "description": "Adaptive JLPT study coach for N5 to N1 with score-based planning, SRS, mistakes and offline progress.",
+  "description": "Adaptive JLPT coach for N5–N1 with score-based planning, SRS, local save, and licensed vocabulary/kanji sync.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -10,8 +10,23 @@
   "orientation": "portrait-primary",
   "lang": "th",
   "icons": [
-    {"src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
