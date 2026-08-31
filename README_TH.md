@@ -1,6 +1,37 @@
-# JLPT Coach N5–N1 — Version 2.1.1
+# JLPT Coach N5–N1 — Version 2.2.0
 
-เวอร์ชันนี้ขยายระบบคลัง Vocabulary และ Kanji ของ JLPT Coach โดยใช้ชุดข้อมูลเปิดที่มีสัญญาอนุญาตชัดเจน และจัดเก็บคลังที่ประมวลผลแล้วไว้ใน IndexedDB ของอุปกรณ์ เพื่อให้ใช้งานออฟไลน์ได้หลังการซิงก์ครั้งแรก
+เวอร์ชันนี้ต่อยอดคลัง Vocabulary/Kanji แบบเปิดจาก Version 2.1.1 และเพิ่ม **Multi-Voice Listening Engine** เพื่อแยกเสียงตามจำนวนผู้พูดในบทสนทนา พร้อม Speaker Highlight, ฟังช้า, หยุดเสียง และเปิด Script แบบแยกบรรทัดหลังตอบคำถาม ข้อมูล Progress ยังคงบันทึกในเครื่องด้วย Storage key เดิม
+
+
+## สิ่งใหม่ใน Version 2.2.0
+
+### Multi-Voice Listening
+
+- ตรวจผู้พูดจาก Script เช่น `女：`, `男：`, `先生：`, `店員：`, `上司：`, `社員：`, `放送：` และบทบาทอื่น
+- สร้าง Speaker profile ตามจำนวนคนในบทสนทนา ไม่จำกัดเพียง 2 คน
+- ถ้าอุปกรณ์มี Japanese voice หลายเสียง ระบบจะพยายามเลือกคนละเสียงให้ผู้พูดแต่ละคน
+- ถ้ามี Japanese voice เพียงเสียงเดียว ระบบยังแยกตัวละครด้วย Pitch และความเร็วที่ต่างกัน
+- Speaker chip จะถูก Highlight ตามคนที่กำลังพูด
+- มีปุ่ม `ฟังช้า` และ `หยุด`
+- Script ถูกซ่อนไว้ก่อนตอบ และหลังตอบจะแสดงแบบแยกผู้พูดทีละบรรทัด
+- แตะแต่ละบรรทัดของ Script เพื่อฟังเฉพาะประโยคนั้นซ้ำได้
+- บันทึกจำนวนรอบที่ฟัง, จำนวนผู้พูด และชนิดคำถามลง Mistake Log เมื่อทำผิด
+
+### Listening Blueprint
+
+ระบบจัดชนิด Listening ในระดับข้อมูลเป็น `conversation`, `announcement`, `task`, `key-point` และ `monologue` เพื่อให้ต่อยอด Adaptive Plan รายประเภทย่อยได้ โดยใช้รูปแบบข้อสอบเป็นแนวทาง แต่ไม่ได้คัดลอก Script หรือข้อสอบจาก Textbook
+
+### การตั้งค่าเสียงใหม่
+
+ที่ `โปรไฟล์ → การเรียนประจำวัน` มีตัวเลือก:
+
+1. เปิด/ปิดเสียงภาษาญี่ปุ่น
+2. เปิด/ปิดการแยกเสียงตามผู้พูด
+3. ความเร็ว Auto / ช้า / มาตรฐาน / ใกล้ข้อสอบ
+4. ปุ่มทดสอบบทสนทนา 2 เสียง
+5. สถานะแสดงจำนวน Japanese voices ที่อุปกรณ์ตรวจพบ
+
+> บน iPhone จำนวนเสียงที่มีจริงขึ้นกับเสียงภาษาญี่ปุ่นที่ติดตั้งใน iOS หากพบเพียงเสียงเดียว ฟังก์ชัน Pitch/Rate fallback จะทำงานอัตโนมัติ
 
 ## ขอบเขตที่ทำในเวอร์ชันนี้
 
@@ -51,7 +82,7 @@
 
 ## กลไกการซิงก์
 
-เมื่อเปิด Version 2.1.1 ครั้งแรกขณะออนไลน์:
+เมื่อเปิด Version 2.2.0 ครั้งแรกขณะออนไลน์:
 
 1. แอปดาวน์โหลดข้อมูลจากแหล่งเปิดผ่าน jsDelivr
 2. หาก jsDelivr ไม่สำเร็จ จะลอง Raw GitHub เป็นแหล่งสำรอง
@@ -69,7 +100,8 @@
 - `content-config.js` — เป้าหมายจำนวน แหล่งข้อมูล URL และ Content Cache Version
 - `content-engine.js` — Normalize, Merge, Deduplicate และจัด Coverage N5–N1
 - `content-loader.js` — ดาวน์โหลด JSON/CSV, Cache ใน IndexedDB และ Offline fallback
-- `app.js` — ใช้ Vocabulary + Kanji pack แบบสะสมตามระดับ
+- `dialogue-engine.js` — แยก Script เป็นผู้พูด เลือก Voice และควบคุมการอ่านทีละ Turn
+- `app.js` — Adaptive Engine, Listening UI, Speaker Highlight และใช้ Vocabulary + Kanji pack แบบสะสมตามระดับ
 - `index.html` — หน้าสถานะและปุ่มซิงก์คลัง
 - `styles.css` — UI สำหรับสถานะ Content Sync
 - `sw.js` — Offline app-shell cache และ Cache Version ใหม่
@@ -92,7 +124,7 @@
 
 จากนั้น:
 
-1. แตกไฟล์ `JLPT_Coach_V2_1_1_Content_Replacement.zip`
+1. แตกไฟล์ `JLPT_Coach_V2_2_0_MultiVoice_Update.zip`
 2. เข้า GitHub Repository เดิม
 3. อัปโหลดไฟล์ทั้งหมดใน ZIP ทับไฟล์ชื่อเดิมที่ Root ของ Repository
 4. Commit changes
@@ -130,16 +162,30 @@
 
 ## การทดสอบที่ดำเนินการ
 
-- JavaScript syntax check ของ `app.js`, `content-config.js`, `content-engine.js`, `content-loader.js` และ `sw.js`
+- JavaScript syntax check ของ `app.js`, `dialogue-engine.js`, `content-config.js`, `content-engine.js`, `content-loader.js` และ `sw.js`
 - JSON validation ของ `manifest.webmanifest` และ `CONTENT_SOURCES.json`
 - Unit test ด้วยข้อมูลจำลองมากกว่า 10,000 Vocabulary และ 2,000 Kanji
 - ยืนยันจำนวนสะสมเป้าหมาย 800/1,500/3,750/6,000/10,000 และ 100/300/650/1,000/2,000
 - ยืนยันการลบรายการซ้ำและ Stable ID
 - ยืนยันว่า Starter content เดิมมี Priority สูงสุดเพื่อรักษา SRS ID เดิม
 
+
+## การทดสอบ Multi-Voice ที่ดำเนินการ
+
+- ทดสอบ parser กับ Script 1, 2 และ 3 ผู้พูด
+- ทดสอบบทสนทนา `男 / 女` ให้เลือก Voice profile ต่างกัน
+- ทดสอบกรณีมี Japanese voice เพียงหนึ่งเสียง และยืนยันว่า Pitch/Rate ต่างกัน
+- ทดสอบ Mobile viewport 390 × 844
+- ทดสอบ Play, Slow, Stop, Speaker highlight และ Transcript reveal
+- ทดสอบ Transcript line replay
+- ทดสอบว่าไม่มี JavaScript page error ใน Listening flow หลัก
+- ยืนยันว่า Storage key ยังเป็น `jlpt-coach-state-v2` จึงรักษา Progress เดิมเมื่อใช้ URL เดิม
+
 ## ข้อจำกัด
 
 - จำนวนจริงหลังซิงก์อาจต่ำกว่าเป้าหมายหากแหล่งข้อมูลภายนอกบางแหล่งใช้งานไม่ได้ หรือจำนวน Unique items หลังลบซ้ำไม่พอ แอปจะแสดงจำนวนจริงและ Error count
 - รายการระดับ JLPT เป็นการจัดหมวดจากแหล่งชุมชน/ชุดข้อมูลเปิด ไม่ใช่รายการรับรองจากผู้จัดสอบ
-- Version นี้เพิ่ม Vocabulary/Kanji เป็นหลัก Grammar, Reading และ Listening ยังคงใช้คลังเดิม
+- Version นี้เพิ่ม Listening Engine และ UI แต่ไม่ได้เพิ่มไฟล์เสียงจริง เสียงถูกสร้างด้วย Japanese Text-to-Speech ของอุปกรณ์
+- คุณภาพและจำนวนเสียงขึ้นกับ iOS/Browser; หากมีเสียงเดียว ระบบใช้ Pitch/Rate แยกผู้พูด
+- คลัง Grammar, Reading และจำนวน Listening items ยังคงใช้ฐานเดิม โดยปรับวิธีเล่นและวิเคราะห์ Listening
 - Projected Score และ Readiness เป็นตัวช่วยเรียน ไม่ใช่การรับรองผลสอบ

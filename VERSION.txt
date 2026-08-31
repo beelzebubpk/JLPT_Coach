@@ -1,7 +1,8 @@
 JLPT Coach N5–N1
-Version: 2.1.1
-Build date: 2026-08-28
+Version: 2.2.0
+Build date: 2026-08-31
 Storage key: jlpt-coach-state-v2
+App-shell cache: jlpt-coach-v2-2-0-20260831-1
 Content cache: licensed-content-2.1.1-20260828-1
 
 Core features:
@@ -9,5 +10,8 @@ Core features:
 - Daily Quest, SRS, Mistake Log, Mock Test
 - Local auto-save and JSON backup
 - Licensed/open Vocabulary and Kanji sync
-- Cumulative targets: N5 800/100, N4 1500/300, N3 3750/650, N2 6000/1000, N1 10000/2000
+- Multi-Voice Listening: one speaker profile per conversation participant
+- Distinct Japanese voices when available; Pitch/Rate fallback when only one voice exists
+- Speaker highlighting, slow replay, stop control, and line-by-line transcript replay
+- Cumulative lexical targets: N5 800/100, N4 1500/300, N3 3750/650, N2 6000/1000, N1 10000/2000
 - PWA offline support after first content sync

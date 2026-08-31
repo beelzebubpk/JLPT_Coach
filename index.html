@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#35b79d">
-  <meta name="description" content="JLPT Coach N5–N1: แอปวางแผนเรียนแบบ Adaptive จากคะแนน จุดอ่อน และเวลาที่มี">
+  <meta name="description" content="JLPT Coach N5–N1: Adaptive learning, SRS และบทสนทนา Multi-Voice แยกผู้พูด">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="JLPT Coach">
   <title>JLPT Coach — N5 to N1</title>
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest?v=2.2.0">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.2.0">
 </head>
 <body>
   <div class="content-boot" id="contentBootOverlay" role="status" aria-live="polite">
@@ -193,6 +193,9 @@
           <div class="setting-row"><div><div class="setting-title">เวลาเรียนต่อวัน</div><div class="setting-desc">ปรับจำนวนโจทย์และภารกิจ</div></div><div class="setting-control"><select id="dailyMinutesSelect"><option value="10">10 นาที</option><option value="15">15 นาที</option><option value="25">25 นาที</option><option value="40">40 นาที</option><option value="60">60 นาที</option></select></div></div>
           <div class="setting-row"><div><div class="setting-title">เวลาเตือน</div><div class="setting-desc">ใช้กับ Notification/ไฟล์ Calendar</div></div><div class="setting-control"><input type="time" id="reminderTimeInput" value="20:30"></div></div>
           <div class="setting-row"><div><div class="setting-title">เสียงอ่านภาษาญี่ปุ่น</div><div class="setting-desc">ใช้ Japanese TTS ในโทรศัพท์</div></div><label class="switch"><input type="checkbox" id="soundToggle" checked><span></span></label></div>
+          <div class="setting-row"><div><div class="setting-title">แยกเสียงตามผู้พูด</div><div class="setting-desc" id="multiVoiceDesc">คนละเสียงเมื่อมี และใช้ Pitch/Rate เป็นตัวสำรอง</div></div><label class="switch"><input type="checkbox" id="multiVoiceToggle" checked><span></span></label></div>
+          <div class="setting-row"><div><div class="setting-title">ความเร็วบทสนทนา</div><div class="setting-desc">Auto จะปรับตามระดับ JLPT</div></div><div class="setting-control"><select id="listeningSpeedSelect"><option value="auto">Auto</option><option value="slow">ช้า 0.72×</option><option value="normal">มาตรฐาน 0.86×</option><option value="exam">ใกล้ข้อสอบ 1.00×</option></select></div></div>
+          <div class="setting-row"><div><div class="setting-title">ทดสอบเสียงสนทนา</div><div class="setting-desc" id="voiceStatus">กำลังตรวจเสียงภาษาญี่ปุ่น…</div></div><button type="button" class="secondary-btn small-btn" id="voiceTestBtn">ทดสอบ 2 เสียง</button></div>
           <div class="setting-row"><div><div class="setting-title">โหมดมืด</div><div class="setting-desc">เหมาะกับการเรียนช่วงกลางคืน</div></div><label class="switch"><input type="checkbox" id="darkToggle"><span></span></label></div>
           <div class="setting-row"><div><div class="setting-title">วันสอบเป้าหมาย</div><div class="setting-desc" id="examDateDesc">ใช้คำนวณ Study Phase</div></div><div class="setting-control"><input type="date" id="examDateInput" value="2026-12-06"></div></div>
         </article>
@@ -219,8 +222,8 @@
           <div class="setting-row"><div><div class="setting-title">เริ่มใหม่ทั้งหมด</div><div class="setting-desc">ลบข้อมูล Local ของแอปนี้ในเครื่อง</div></div><button type="button" class="danger-btn small-btn" id="resetBtn">Reset</button></div>
         </article>
 
-        <div class="section-title-row"><h3>เกี่ยวกับ Version 2.1.1</h3></div>
-        <article class="card about-note" id="aboutNote">รองรับ N5–N1, Adaptive Plan, SRS, Mistake Log, Local Save และคลัง Vocabulary/Kanji แบบซิงก์จากแหล่งข้อมูลเปิด โดยไม่คัดลอกข้อสอบจริง ข้อมูลของคนละเครื่องจะแยกจากกัน</article>
+        <div class="section-title-row"><h3>เกี่ยวกับ Version 2.2.0</h3></div>
+        <article class="card about-note" id="aboutNote">รองรับ N5–N1, Adaptive Plan, SRS, Mistake Log, Local Save, Licensed Content Sync และ Multi-Voice Listening ที่แยกเสียงตามผู้พูด พร้อม Transcript รายบรรทัด โดยไม่คัดลอกข้อสอบจริง ข้อมูลของคนละเครื่องจะแยกจากกัน</article>
       </section>
     </main>
 
@@ -330,6 +333,7 @@
   <script src="content-config.js"></script>
   <script src="content-engine.js"></script>
   <script src="content-loader.js"></script>
-  <script src="app.js"></script>
+  <script src="dialogue-engine.js?v=2.2.0"></script>
+  <script src="app.js?v=2.2.0"></script>
 </body>
 </html>

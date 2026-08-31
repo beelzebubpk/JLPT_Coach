@@ -6,6 +6,11 @@
     document.body.innerHTML = '<p style="padding:24px">ไม่พบข้อมูลแอป กรุณาเปิด index.html พร้อม data.js</p>';
     return;
   }
+  const DIALOGUE = window.JLPTDialogueEngine;
+  if (!DIALOGUE) {
+    document.body.innerHTML = '<p style="padding:24px">ไม่พบ Dialogue Engine กรุณาอัปโหลด dialogue-engine.js พร้อมไฟล์แอป</p>';
+    return;
+  }
 
   const STORAGE_KEY = 'jlpt-coach-state-v2';
   const LEGACY_KEY = 'n4-sprint-state-v1';
@@ -27,7 +32,7 @@
   const INSIGHTS = [
     ['💡', 'จำเป็นชุด ไม่ใช่คำโดด', 'จำคำศัพท์พร้อมคำอ่าน Particle ที่ใช้คู่กัน และประโยคสั้น จะช่วยทั้ง Vocabulary, Reading และ Listening'],
     ['⏱️', 'ความเร็วคือส่วนหนึ่งของความรู้', 'คำที่รู้แต่ต้องคิดนานยังไม่พร้อมสำหรับข้อสอบ ใช้ Smart Review จนตอบได้อัตโนมัติ'],
-    ['🎧', 'ฟังก่อนดู Script', 'รอบแรกจับผู้พูด เวลา การเปลี่ยนแผน และสิ่งที่ต้องทำ แล้วค่อยเปิด Script หลังตอบ'],
+    ['🎧', 'แยกผู้พูดก่อนจับคำตอบ', 'ระบบใช้คนละเสียงหรือปรับ Pitch/Rate ตามผู้พูด รอบแรกให้จับว่าใครเสนออะไรและข้อสรุปสุดท้ายคืออะไร'],
     ['📖', 'อ่านคำถามก่อนบทความ', 'หา keyword เช่น いつ、なぜ、最も และเงื่อนไขปฏิเสธ ก่อนอ่านรายละเอียด'],
     ['🔁', 'ข้อผิดคือข้อมูล ไม่ใช่ความล้มเหลว', 'Mistake Log จะเพิ่มน้ำหนักให้ทักษะที่พลาดและนำคำศัพท์กลับมาถามเร็วขึ้น'],
     ['🌱', 'วันยุ่งก็เรียนได้', 'โหมด 5–10 นาทีช่วยรักษาความต่อเนื่อง โดยระบบยังเลือกสิ่งที่มีมูลค่าสูงสุดให้'],
@@ -48,7 +53,7 @@
   let activeLesson = null;
   let installPrompt = null;
   let toastTimer = null;
-  let japaneseVoices = [];
+  let activeSpeechUi = null;
   let questionTimerHandle = null;
   let onboardingStep = 1;
   let onboardingEditMode = false;
@@ -77,6 +82,8 @@
         reminderTime: '20:30',
         examDate: CONTENT.meta.defaultExamDate,
         sound: true,
+        multiVoice: true,
+        listeningSpeed: 'auto',
         dark: false,
         selfWeaknesses: [],
         onboardingDone: false,
@@ -119,6 +126,8 @@
       reminderTime: legacyProfile.reminderTime || '20:30',
       examDate: legacyProfile.examDate || CONTENT.meta.defaultExamDate,
       sound: legacyProfile.sound !== false,
+      multiVoice: legacyProfile.multiVoice !== false,
+      listeningSpeed: legacyProfile.listeningSpeed || 'auto',
       dark: Boolean(legacyProfile.dark),
       selfWeaknesses: ['vocab'],
       onboardingDone: true,
@@ -704,20 +713,40 @@
     };
   }
 
+  function inferListeningType(item, dialogue) {
+    const script = String(item.script || '');
+    if (dialogue.speakers.length === 1 && /放送|予報|司会|ナレーター/.test(script)) return 'announcement';
+    if (/何をしますか|どうしますか|まず何/.test(item.question || '')) return 'task';
+    if (/どうして|なぜ|理由/.test(item.question || '')) return 'key-point';
+    if (dialogue.speakers.length > 1) return 'conversation';
+    return 'monologue';
+  }
+
+  function listeningTypeLabel(type) {
+    return ({
+      conversation: '会話', announcement: 'アナウンス', task: '課題理解',
+      'key-point': 'ポイント理解', monologue: 'モノローグ',
+    })[type] || 'LISTENING';
+  }
+
   function makeListeningCard(item) {
     const optionData = shuffleExistingOptions(
       item.options, item.answer,
       `${localISO()}-${item.id}-${getLevelStats(item.level).listening.attempts}`,
       (text) => `เสียงไม่ได้สรุปว่า「${text}」 ให้ฟังจุดเปลี่ยนแผน ความเห็นสุดท้าย และคำปฏิเสธ`,
     );
+    const dialogue = DIALOGUE.normalize(item);
+    const questionType = item.questionType || inferListeningType(item, dialogue);
     return {
       type: 'question', level: item.level, skill: 'listening', subtype: 'listening', listeningId: item.id,
-      kicker: `${item.level} · LISTENING`, prompt: item.question,
-      hint: 'รอบแรกจับ “ใคร–สถานการณ์–ข้อสรุปสุดท้าย” ก่อน',
-      script: item.script, title: item.title,
+      kicker: `${item.level} · LISTENING · ${listeningTypeLabel(questionType)}`, prompt: item.question,
+      hint: dialogue.speakers.length > 1
+        ? `มี ${dialogue.speakers.length} ผู้พูด ระบบจะแยกเสียงและไฮไลต์ผู้พูดให้ จับข้อสรุปสุดท้ายก่อน`
+        : 'รอบแรกจับสถานการณ์ เวลา และข้อสรุปสุดท้ายก่อน',
+      script: item.script, title: item.title, dialogue, questionType,
       options: optionData.options, optionNotes: optionData.optionNotes, answer: optionData.answer,
       explanation: item.explanation,
-      speakText: item.script.replace(/(?:女|男|先生|店員|駅の放送|放送|受付|天気予報|配達員|上司|社員|部長|担当者|教授|学生|編集者|研究員|司会)：/g, '。'),
+      speakText: dialogue.lines.map((line) => line.text).join('。'),
     };
   }
 
@@ -913,6 +942,7 @@
       finished: false,
       questionStartedAt: null,
       questionTimes: [],
+      audioPlayCounts: {},
     };
     $('lessonOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -934,6 +964,7 @@
 
   function renderLessonCard() {
     stopQuestionTimer();
+    stopSpeech();
     const main = $('lessonMain');
     const footer = $('lessonFooter');
     const action = $('lessonActionBtn');
@@ -991,6 +1022,118 @@
     action.onclick = () => handleLessonAction(card);
   }
 
+  function getListeningBaseRate(level, slow = false) {
+    const setting = state.profile.listeningSpeed || 'auto';
+    const preset = { slow: 0.72, normal: 0.86, exam: 1.00 }[setting];
+    let rate = preset || (['N1', 'N2'].includes(level) ? 0.92 : level === 'N3' ? 0.88 : 0.84);
+    if (slow) rate -= 0.14;
+    return clamp(rate, 0.58, 1.12);
+  }
+
+  function renderListeningMarkup(card) {
+    const dialogue = card.dialogue || DIALOGUE.normalize(card.script);
+    const count = dialogue.speakers.length;
+    const speakerChips = dialogue.speakers.map((speaker) => `
+      <div class="speaker-chip speaker-tone-${speaker.index % 6}" data-speaker-index="${speaker.index}">
+        <span class="speaker-avatar" aria-hidden="true">${escapeHtml(speaker.icon)}</span>
+        <span class="speaker-chip-copy"><strong>${escapeHtml(speaker.labelTh)}</strong><small>${escapeHtml(speaker.role)}</small></span>
+      </div>`).join('');
+    const transcript = dialogue.lines.map((line, index) => {
+      const speaker = dialogue.speakers[line.speakerIndex];
+      return `<button type="button" class="transcript-line speaker-tone-${line.speakerIndex % 6}" data-dialogue-line="${index}">
+        <span class="transcript-speaker"><span aria-hidden="true">${escapeHtml(speaker?.icon || '🗣️')}</span><strong>${escapeHtml(line.speaker)}</strong></span>
+        <span class="transcript-text">${escapeHtml(line.text)}</span><span class="transcript-play" aria-hidden="true">🔊</span>
+      </button>`;
+    }).join('');
+    const summary = count > 1 ? `${count} ผู้พูด · แยกเสียงอัตโนมัติ` : 'เสียงเดียว / ประกาศ';
+    return `<article class="listening-card" data-listening-card="${escapeAttr(card.listeningId || cardKey(card))}">
+      <div class="speaker-stage" aria-label="ผู้พูดในบทสนทนา">${speakerChips}</div>
+      <button type="button" class="audio-orb" data-dialogue-play aria-label="เล่นบทสนทนาทั้งหมด">▶</button>
+      <div class="audio-status" data-dialogue-status aria-live="polite">${escapeHtml(summary)} · แตะเพื่อฟัง</div>
+      <div class="audio-tools">
+        <button type="button" class="audio-tool" data-dialogue-slow>🐢 ฟังช้า</button>
+        <button type="button" class="audio-tool" data-dialogue-stop>■ หยุด</button>
+      </div>
+      <div class="voice-fallback-note">ถ้า iPhone มีเสียงญี่ปุ่นหลายเสียง ระบบจะเลือกคนละเสียง หากมีเสียงเดียว ระบบจะแยกด้วยระดับเสียงและความเร็ว</div>
+      <div class="script-reveal hidden" id="currentScript"><div class="script-heading"><strong>Script แยกผู้พูด</strong><small>แตะแต่ละบรรทัดเพื่อฟังซ้ำ</small></div>${transcript}</div>
+    </article>`;
+  }
+
+  function incrementListeningPlay(card) {
+    if (!activeLesson) return 0;
+    const key = cardKey(card);
+    activeLesson.audioPlayCounts[key] = Number(activeLesson.audioPlayCounts[key] || 0) + 1;
+    return activeLesson.audioPlayCounts[key];
+  }
+
+  function listeningPlayCount(card) {
+    return Number(activeLesson?.audioPlayCounts?.[cardKey(card)] || 0);
+  }
+
+  function bindListeningControls(root, card) {
+    const dialogue = card.dialogue || DIALOGUE.normalize(card.script);
+    const playButton = root.querySelector('[data-dialogue-play]');
+    const slowButton = root.querySelector('[data-dialogue-slow]');
+    const stopButton = root.querySelector('[data-dialogue-stop]');
+    const statusNode = root.querySelector('[data-dialogue-status]');
+    const speakerNodes = Array.from(root.querySelectorAll('[data-speaker-index]'));
+    const transcriptNodes = Array.from(root.querySelectorAll('[data-dialogue-line]'));
+
+    const resetUi = (message = null) => {
+      playButton?.classList.remove('playing');
+      if (playButton) playButton.textContent = '▶';
+      speakerNodes.forEach((node) => node.classList.remove('active'));
+      transcriptNodes.forEach((node) => node.classList.remove('speaking'));
+      if (message && statusNode) statusNode.textContent = message;
+      if (activeSpeechUi === resetUi) activeSpeechUi = null;
+    };
+
+    const highlightLine = (line, lineIndex) => {
+      speakerNodes.forEach((node) => node.classList.toggle('active', Number(node.dataset.speakerIndex) === line.speakerIndex));
+      transcriptNodes.forEach((node) => node.classList.toggle('speaking', Number(node.dataset.dialogueLine) === lineIndex));
+      if (statusNode) statusNode.textContent = `กำลังพูด: ${dialogue.speakers[line.speakerIndex]?.labelTh || line.speaker} · บรรทัด ${lineIndex + 1}/${dialogue.lines.length}`;
+    };
+
+    const play = (slow = false) => {
+      if (!state.profile.sound) { showToast('เปิดเสียงอ่านได้ที่โปรไฟล์'); return; }
+      stopSpeech();
+      incrementListeningPlay(card);
+      activeSpeechUi = resetUi;
+      if (playButton) { playButton.classList.add('playing'); playButton.textContent = '■'; }
+      if (statusNode) statusNode.textContent = slow ? 'กำลังเริ่มโหมดช้า…' : 'กำลังเริ่มบทสนทนา…';
+      DIALOGUE.play(dialogue, {
+        multiVoice: state.profile.multiVoice !== false,
+        baseRate: getListeningBaseRate(card.level, slow),
+        pauseMs: slow ? 340 : 210,
+        onLineStart: highlightLine,
+        onEnd: () => resetUi(`ฟังจบแล้ว · เล่นไป ${listeningPlayCount(card)} รอบ`),
+        onUnsupported: () => { resetUi('อุปกรณ์นี้ไม่รองรับเสียงอ่านอัตโนมัติ'); showToast('อุปกรณ์นี้ไม่รองรับเสียงอ่านอัตโนมัติ'); },
+      }).catch((error) => {
+        console.warn('Dialogue playback failed:', error);
+        resetUi('เล่นเสียงไม่สำเร็จ กรุณาทดลองอีกครั้ง');
+      });
+    };
+
+    if (playButton) playButton.onclick = () => playButton.classList.contains('playing') ? stopSpeech() : play(false);
+    if (slowButton) slowButton.onclick = () => play(true);
+    if (stopButton) stopButton.onclick = () => { stopSpeech(); if (statusNode) statusNode.textContent = 'หยุดแล้ว · แตะ ▶ เพื่อเริ่มใหม่'; };
+    transcriptNodes.forEach((button) => {
+      button.onclick = () => {
+        if (!state.profile.sound) { showToast('เปิดเสียงอ่านได้ที่โปรไฟล์'); return; }
+        const lineIndex = Number(button.dataset.dialogueLine);
+        stopSpeech();
+        activeSpeechUi = resetUi;
+        DIALOGUE.playLine(dialogue, lineIndex, {
+          multiVoice: state.profile.multiVoice !== false,
+          baseRate: getListeningBaseRate(card.level, false),
+          onLineStart: highlightLine,
+          onEnd: () => resetUi('ฟังบรรทัดนี้จบแล้ว'),
+          onUnsupported: () => resetUi('อุปกรณ์นี้ไม่รองรับเสียงอ่านอัตโนมัติ'),
+        }).catch(() => resetUi('เล่นเสียงไม่สำเร็จ'));
+      };
+    });
+  }
+
   function renderQuestion(card, main) {
     let body = `<div class="lesson-question-top"><div class="lesson-kicker">${escapeHtml(card.kicker)}</div><div class="question-timer" id="questionTimer">⏱ 00:00</div></div><h2 class="lesson-question" id="lessonTitle">${escapeHtml(card.prompt).replace(/\n/g, '<br>')}</h2>`;
     if (card.hint) body += `<p class="lesson-hint">${escapeHtml(card.hint)}</p>`;
@@ -1000,7 +1143,7 @@
     }
 
     if (card.subtype === 'listening') {
-      body += `<article class="listening-card"><button type="button" class="audio-orb" data-speak="${escapeAttr(card.speakText)}" aria-label="เล่นเสียง">▶</button><div class="audio-status">แตะเพื่อฟัง · ฟังซ้ำได้</div><div class="script-reveal hidden" id="currentScript"><strong>Script</strong><br>${escapeHtml(card.script)}</div></article>`;
+      body += renderListeningMarkup(card);
     } else if (card.subtype === 'audio') {
       body += `<article class="listening-card"><button type="button" class="audio-orb" data-speak="${escapeAttr(card.speakText)}" aria-label="เล่นเสียงคำศัพท์">🔊</button><div class="audio-status">แตะฟังคำศัพท์ แล้วเลือกความหมาย</div></article>`;
     } else if (card.speakText) {
@@ -1024,6 +1167,7 @@
       });
     });
     bindSpeakButtons(main);
+    if (card.subtype === 'listening') bindListeningControls(main, card);
     startQuestionTimer();
     if (card.subtype === 'audio' && state.profile.sound) window.setTimeout(() => speakJapanese(card.speakText), 350);
   }
@@ -1063,10 +1207,17 @@
       else if (index === selected) button.classList.add('wrong');
     });
 
-    if (card.subtype === 'listening') $('currentScript')?.classList.remove('hidden');
+    if (card.subtype === 'listening') {
+      stopSpeech();
+      $('currentScript')?.classList.remove('hidden');
+    }
 
     let explanation = card.explanation;
     if (!correct && card.optionNotes?.[selected]) explanation = `${card.optionNotes[selected]} · ${explanation}`;
+    if (card.subtype === 'listening') {
+      const plays = listeningPlayCount(card);
+      explanation = `${explanation} · ฟัง ${plays} รอบ${card.dialogue?.speakers?.length > 1 ? ` · ${card.dialogue.speakers.length} ผู้พูด` : ''}`;
+    }
     if (elapsedSeconds) explanation = `${explanation} · ใช้เวลา ${formatElapsed(elapsedSeconds)}`;
     showFeedback(correct, explanation);
     $('lessonActionBtn').textContent = activeLesson.index === activeLesson.cards.length - 1 ? 'ดูสรุป' : 'ไปต่อ';
@@ -1093,6 +1244,9 @@
       selected: card.options[selected] || '',
       correct: card.options[card.answer] || '',
       explanation: card.optionNotes?.[selected] ? `${card.optionNotes[selected]} · ${card.explanation}` : card.explanation,
+      audioPlays: card.skill === 'listening' ? listeningPlayCount(card) : null,
+      speakerCount: card.skill === 'listening' ? Number(card.dialogue?.speakers?.length || 1) : null,
+      questionType: card.skill === 'listening' ? (card.questionType || 'listening') : null,
       date: localISO(),
       count: (existing?.count || 0) + 1,
     };
@@ -1204,25 +1358,64 @@
     });
   }
 
+  function renderVoiceStatus() {
+    if (!$('voiceStatus')) return;
+    const info = DIALOGUE.status();
+    if (!info.supported) {
+      $('voiceStatus').textContent = 'อุปกรณ์นี้ไม่รองรับ Web Speech';
+      if ($('voiceTestBtn')) $('voiceTestBtn').disabled = true;
+      return;
+    }
+    if ($('voiceTestBtn')) $('voiceTestBtn').disabled = false;
+    if (!info.count) $('voiceStatus').textContent = 'กำลังโหลดเสียงญี่ปุ่น · หากยังไม่พบ ระบบจะใช้เสียงเริ่มต้นของ iPhone';
+    else if (info.hasMultiple) $('voiceStatus').textContent = `พบเสียงญี่ปุ่น ${info.count} เสียง · ระบบเลือกคนละเสียงให้ผู้พูดก่อน`;
+    else $('voiceStatus').textContent = 'พบเสียงญี่ปุ่น 1 เสียง · ระบบจะแยกผู้พูดด้วย Pitch และความเร็ว';
+    if ($('multiVoiceDesc')) $('multiVoiceDesc').textContent = state.profile.multiVoice !== false
+      ? 'เปิด: คนละเสียงเมื่อมี และใช้ Pitch/Rate เป็นตัวสำรอง'
+      : 'ปิด: ใช้เสียงเดียวตลอดบทสนทนา';
+  }
+
   function refreshVoices() {
-    if (!('speechSynthesis' in window)) return;
-    japaneseVoices = window.speechSynthesis.getVoices().filter((voice) => voice.lang?.toLowerCase().startsWith('ja'));
+    DIALOGUE.refreshVoices();
+    renderVoiceStatus();
   }
 
   function speakJapanese(text) {
     if (!state.profile.sound) { showToast('เปิดเสียงอ่านได้ที่โปรไฟล์'); return; }
-    if (!('speechSynthesis' in window)) { showToast('อุปกรณ์นี้ไม่รองรับเสียงอ่านอัตโนมัติ'); return; }
+    const info = DIALOGUE.status();
+    if (!info.supported) { showToast('อุปกรณ์นี้ไม่รองรับเสียงอ่านอัตโนมัติ'); return; }
     stopSpeech();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ja-JP';
-    utterance.rate = ['N1', 'N2'].includes(state.profile.targetLevel) ? 0.90 : 0.84;
-    utterance.pitch = 1.02;
-    if (japaneseVoices[0]) utterance.voice = japaneseVoices[0];
-    window.speechSynthesis.speak(utterance);
+    DIALOGUE.speakText(text, {
+      baseRate: getListeningBaseRate(state.profile.targetLevel, false),
+      onUnsupported: () => showToast('อุปกรณ์นี้ไม่รองรับเสียงอ่านอัตโนมัติ'),
+    }).catch((error) => console.warn('Speech playback failed:', error));
+  }
+
+  function testDialogueVoices() {
+    if (!state.profile.sound) { showToast('กรุณาเปิดเสียงอ่านภาษาญี่ปุ่นก่อน'); return; }
+    const sample = DIALOGUE.normalize([
+      { speaker: '女', text: 'こんにちは。今日の勉強を始めましょう。' },
+      { speaker: '男', text: 'はい。まず、会話を聞きます。' },
+    ]);
+    stopSpeech();
+    const statusNode = $('voiceStatus');
+    DIALOGUE.play(sample, {
+      multiVoice: state.profile.multiVoice !== false,
+      baseRate: getListeningBaseRate(state.profile.targetLevel, false),
+      pauseMs: 260,
+      onLineStart: (line) => { if (statusNode) statusNode.textContent = `ทดสอบเสียง: ${sample.speakers[line.speakerIndex]?.labelTh || line.speaker}`; },
+      onEnd: () => { renderVoiceStatus(); showToast('ทดสอบเสียงสนทนาเสร็จแล้ว'); },
+      onUnsupported: () => { renderVoiceStatus(); showToast('อุปกรณ์นี้ไม่รองรับเสียงอ่านอัตโนมัติ'); },
+    }).catch(() => { renderVoiceStatus(); showToast('ทดสอบเสียงไม่สำเร็จ'); });
   }
 
   function stopSpeech() {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    DIALOGUE.stop();
+    if (activeSpeechUi) {
+      const cleanup = activeSpeechUi;
+      activeSpeechUi = null;
+      cleanup('หยุดแล้ว · แตะ ▶ เพื่อเริ่มใหม่');
+    }
   }
 
   function escapeHtml(value) {
@@ -1521,7 +1714,10 @@
     $('mistakeList').innerHTML = `<div class="mistake-stack">${mistakes.slice(0, 15).map((mistake) => {
       const item = mistake.itemId ? VOCAB_BY_ID.get(mistake.itemId) : null;
       const title = item ? `${item.word}（${item.reading}）` : `${SKILL_LABELS[mistake.skill]?.icon || '📝'} ${SKILL_LABELS[mistake.skill]?.th || mistake.skill}`;
-      return `<details class="mistake-card"><summary><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(mistake.date)} · ผิด ${mistake.count} ครั้ง</small></span><span class="details-arrow">⌄</span></summary><div class="mistake-body"><p><strong>โจทย์:</strong> ${escapeHtml(mistake.prompt)}</p><p class="wrong-answer"><strong>คำตอบที่เลือก:</strong> ${escapeHtml(mistake.selected)}</p><p class="right-answer"><strong>คำตอบที่ถูก:</strong> ${escapeHtml(mistake.correct)}</p><p><strong>เหตุผล:</strong> ${escapeHtml(mistake.explanation)}</p></div></details>`;
+      const listeningMeta = mistake.skill === 'listening'
+        ? ` · ฟัง ${Number(mistake.audioPlays || 0)} รอบ · ${Number(mistake.speakerCount || 1)} ผู้พูด · ${mistake.questionType || 'listening'}`
+        : '';
+      return `<details class="mistake-card"><summary><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(mistake.date)} · ผิด ${mistake.count} ครั้ง${escapeHtml(listeningMeta)}</small></span><span class="details-arrow">⌄</span></summary><div class="mistake-body"><p><strong>โจทย์:</strong> ${escapeHtml(mistake.prompt)}</p><p class="wrong-answer"><strong>คำตอบที่เลือก:</strong> ${escapeHtml(mistake.selected)}</p><p class="right-answer"><strong>คำตอบที่ถูก:</strong> ${escapeHtml(mistake.correct)}</p><p><strong>เหตุผล:</strong> ${escapeHtml(mistake.explanation)}</p></div></details>`;
     }).join('')}</div>`;
   }
 
@@ -1660,9 +1856,12 @@
     $('dailyMinutesSelect').value = String(state.profile.dailyMinutes);
     $('reminderTimeInput').value = state.profile.reminderTime || '20:30';
     $('soundToggle').checked = Boolean(state.profile.sound);
+    if ($('multiVoiceToggle')) $('multiVoiceToggle').checked = state.profile.multiVoice !== false;
+    if ($('listeningSpeedSelect')) $('listeningSpeedSelect').value = state.profile.listeningSpeed || 'auto';
     $('darkToggle').checked = Boolean(state.profile.dark);
     $('examDateInput').value = state.profile.examDate;
     $('examDateDesc').textContent = `${Math.max(0, daysBetween(localISO(), state.profile.examDate))} วันถึงวันสอบ · ใช้คำนวณ Study Phase`;
+    renderVoiceStatus();
   }
 
   function applyTheme() {
@@ -2019,7 +2218,7 @@
   }
 
   function exportProgress() {
-    const payload = { app: 'JLPT Coach N5-N1', schemaVersion: SCHEMA_VERSION, contentVersion: CONTENT.meta.version, exportedAt: new Date().toISOString(), state };
+    const payload = { app: 'JLPT Coach N5-N1', appVersion: '2.2.0', schemaVersion: SCHEMA_VERSION, contentVersion: CONTENT.meta.version, exportedAt: new Date().toISOString(), state };
     downloadBlob(JSON.stringify(payload, null, 2), `JLPT_Coach_Backup_${localISO()}.json`, 'application/json');
     showToast('Export progress แล้ว');
   }
@@ -2138,7 +2337,10 @@
     $('editProfileBtn').onclick = () => openOnboarding(true);
     $('dailyMinutesSelect').onchange = () => { state.profile.dailyMinutes = Number($('dailyMinutesSelect').value); saveState(); renderAll(); };
     $('reminderTimeInput').onchange = () => { state.profile.reminderTime = $('reminderTimeInput').value || '20:30'; state.lastReminderDate = null; saveState(); renderSettings(); updateNotificationStatus(); };
-    $('soundToggle').onchange = () => { state.profile.sound = $('soundToggle').checked; saveState(); if (!state.profile.sound) stopSpeech(); };
+    $('soundToggle').onchange = () => { state.profile.sound = $('soundToggle').checked; saveState(); if (!state.profile.sound) stopSpeech(); renderVoiceStatus(); };
+    if ($('multiVoiceToggle')) $('multiVoiceToggle').onchange = () => { state.profile.multiVoice = $('multiVoiceToggle').checked; saveState(); stopSpeech(); renderVoiceStatus(); };
+    if ($('listeningSpeedSelect')) $('listeningSpeedSelect').onchange = () => { state.profile.listeningSpeed = $('listeningSpeedSelect').value || 'auto'; saveState(); stopSpeech(); renderVoiceStatus(); };
+    if ($('voiceTestBtn')) $('voiceTestBtn').onclick = testDialogueVoices;
     $('darkToggle').onchange = () => { state.profile.dark = $('darkToggle').checked; saveState(); applyTheme(); };
     $('examDateInput').onchange = () => { state.profile.examDate = $('examDateInput').value || CONTENT.meta.defaultExamDate; saveState(); renderAll(); };
 

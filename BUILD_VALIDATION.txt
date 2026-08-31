@@ -1,27 +1,45 @@
-JLPT Coach V2.1.1 Build Validation
-Date: 2026-08-28
+JLPT Coach V2.2.0 Build Validation
+Date: 2026-08-31
 
 Checks completed:
 - JavaScript syntax: PASS
   app.js
+  dialogue-engine.js
   content-config.js
   content-engine.js
   content-loader.js
   sw.js
 - JSON validation: PASS
+  content.json
   manifest.webmanifest
   CONTENT_SOURCES.json
-- CSV parser quoted-field test: PASS
-- Content merge unit test: PASS
-- Stable curated-item ID preservation test: PASS
-- Synthetic cumulative coverage test: PASS
+- Dialogue parser: PASS
+  single-speaker announcement
+  two-speaker conversation
+  three-speaker conversation
+- Voice assignment: PASS
+  distinct Japanese voices when 2+ voices are available
+  distinct Pitch/Rate fallback when only one Japanese voice is available
+- Mobile UI test at 390 x 844: PASS
+- Listening flow: PASS
+  play all
+  slow playback
+  stop
+  speaker highlight
+  answer grading
+  transcript reveal
+  line replay binding
+- Browser flow page errors: NONE in tested path
+- Local progress compatibility: PASS
+  Storage key remains jlpt-coach-state-v2
+- App-shell cache includes dialogue-engine.js: PASS
 
-Expected cumulative coverage after successful licensed-content sync:
+Expected cumulative lexical coverage after successful licensed-content sync:
 N5: 800 Vocabulary / 100 Kanji
 N4: 1,500 Vocabulary / 300 Kanji
 N3: 3,750 Vocabulary / 650 Kanji
 N2: 6,000 Vocabulary / 1,000 Kanji
 N1: 10,000 Vocabulary / 2,000 Kanji
 
-Note:
-Actual first-run network retrieval could not be bundled into this static archive. The PWA performs the licensed-source download on the user's device and shows actual counts and source errors in Profile.
+Platform note:
+The actual voice names and number of Japanese voices depend on iOS and installed system voices. The app uses Pitch/Rate separation when only one voice is exposed by the browser.

@@ -1,6 +1,6 @@
 # Content Licenses and Attribution
 
-JLPT Coach Version 2.1.1 does not bundle or reproduce complete official JLPT past examinations.
+JLPT Coach Version 2.2.0 does not bundle or reproduce complete official JLPT past examinations.
 The expanded Vocabulary/Kanji pack is built at runtime from the following open sources.
 
 ## 1. OpenJLPT
@@ -36,3 +36,8 @@ The expanded Vocabulary/Kanji pack is built at runtime from the following open s
 Official JLPT websites are consulted only to understand the published test structure, question types and copyright limitations. Complete official test questions, listening audio and copyrighted passages are not copied into this application.
 
 This file is an attribution summary, not legal advice. Repository maintainers should preserve upstream LICENSE/NOTICE requirements when distributing modified data or derived packs.
+
+
+## User-provided textbooks and study summaries
+
+The user-provided textbook PDFs and study summaries were used only as internal references for learning flow, question taxonomy, grammar organization, and listening interaction design. Version 2.2.0 does not embed scanned pages, original illustrations, original listening recordings, or copied textbook question sets. Multi-Voice Listening uses the existing JLPT Coach scripts and device-generated Text-to-Speech.
