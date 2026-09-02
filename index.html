@@ -8,11 +8,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="JLPT Coach">
-  <title>JLPT Coach V2.3 — N5 to N1</title>
-  <link rel="manifest" href="manifest.webmanifest?v=2.3.0">
+  <title>JLPT Coach V2.3.1 — Compact Quiz</title>
+  <link rel="manifest" href="manifest.webmanifest?v=2.3.1">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="icon" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=2.3.0">
+  <link rel="stylesheet" href="styles.css?v=2.3.1">
 </head>
 <body>
   <div class="content-boot" id="contentBootOverlay" role="status" aria-live="polite">
@@ -247,8 +247,8 @@
           <div class="setting-row"><div><div class="setting-title">เริ่มใหม่ทั้งหมด</div><div class="setting-desc">ลบข้อมูล Local ของแอปนี้ในเครื่อง</div></div><button type="button" class="danger-btn small-btn" id="resetBtn">Reset</button></div>
         </article>
 
-        <div class="section-title-row"><h3>เกี่ยวกับ Version 2.3.0</h3></div>
-        <article class="card about-note" id="aboutNote">เพิ่ม Textbook Learning Path, Grammar Quick/Deep Explain, Question Lab, Error Taxonomy, Weak-subtype Analytics, Mock Ladder 10 ขั้น และ Adaptive selection ตามสาเหตุที่ผิด พร้อมคง Multi-Voice Listening, SRS, Local Save และ Licensed Content Sync โดยไม่ฝังหน้าสแกนหรือคัดลอกข้อสอบเดิม</article>
+        <div class="section-title-row"><h3>เกี่ยวกับ Version 2.3.1</h3></div>
+        <article class="card about-note" id="aboutNote">เพิ่ม Compact Quiz Focus Mode ให้โจทย์ คำถาม เสียง และตัวเลือกอยู่ในหน้าจอเดียว โดยตรึงปุ่มตอบไว้ด้านล่าง ใช้พื้นที่เลื่อนเฉพาะบทอ่านยาว และแสดงเฉลยเป็น Bottom Sheet พร้อมคง Textbook Learning Engine, Multi-Voice Listening, SRS, Local Save และ Adaptive Analytics เดิม</article>
       </section>
     </main>
 
@@ -269,7 +269,17 @@
         <div class="lesson-energy" id="lessonEnergy">💚 5</div>
       </header>
       <main class="lesson-main" id="lessonMain"></main>
-      <footer class="lesson-footer" id="lessonFooter"><div class="feedback-panel" id="feedbackPanel"><h3 class="feedback-title" id="feedbackTitle"></h3><p class="feedback-text" id="feedbackText"></p><div class="feedback-details" id="feedbackDetails"></div></div><button type="button" class="primary-btn full" id="lessonActionBtn">ตรวจคำตอบ</button></footer>
+      <footer class="lesson-footer" id="lessonFooter">
+        <div class="feedback-panel" id="feedbackPanel" aria-live="polite">
+          <div class="feedback-sheet-handle" aria-hidden="true"></div>
+          <div class="feedback-heading-row">
+            <h3 class="feedback-title" id="feedbackTitle"></h3>
+            <button type="button" class="feedback-collapse" id="feedbackCollapseBtn" aria-label="ย่อหรือขยายคำอธิบาย" aria-expanded="true">⌄</button>
+          </div>
+          <div class="feedback-content" id="feedbackContent"><p class="feedback-text" id="feedbackText"></p><div class="feedback-details" id="feedbackDetails"></div></div>
+        </div>
+        <button type="button" class="primary-btn full lesson-action" id="lessonActionBtn">ตรวจคำตอบ</button>
+      </footer>
     </div>
   </section>
 
@@ -354,12 +364,12 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="confetti hidden" id="confetti" aria-hidden="true"></div>
 
-  <script src="data.js?v=2.3.0"></script>
-  <script src="content-config.js?v=2.3.0"></script>
-  <script src="content-engine.js?v=2.3.0"></script>
-  <script src="content-loader.js?v=2.3.0"></script>
-  <script src="dialogue-engine.js?v=2.3.0"></script>
-  <script src="textbook-engine.js?v=2.3.0"></script>
-  <script src="app.js?v=2.3.0"></script>
+  <script src="data.js?v=2.3.1"></script>
+  <script src="content-config.js?v=2.3.1"></script>
+  <script src="content-engine.js?v=2.3.1"></script>
+  <script src="content-loader.js?v=2.3.1"></script>
+  <script src="dialogue-engine.js?v=2.3.1"></script>
+  <script src="textbook-engine.js?v=2.3.1"></script>
+  <script src="app.js?v=2.3.1"></script>
 </body>
 </html>

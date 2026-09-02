@@ -1289,6 +1289,7 @@
       audioPlayCounts: {},
     };
     $('lessonOverlay').classList.add('open');
+    document.body.classList.add('lesson-open');
     document.body.style.overflow = 'hidden';
     renderLessonCard();
   }
@@ -1301,6 +1302,9 @@
     }
     stopSpeech();
     $('lessonOverlay').classList.remove('open');
+    $('lessonOverlay').classList.remove('quiz-mode');
+    $('lessonOverlay').removeAttribute('data-quiz-subtype');
+    document.body.classList.remove('lesson-open');
     document.body.style.overflow = '';
     activeLesson = null;
     renderAll();
@@ -1347,9 +1351,89 @@
       const item = VOCAB_BY_ID.get(card.itemId);
       if (item?.collocations?.length) html += `<div class="collocation-box"><strong>คำที่ใช้ร่วมกัน</strong><div>${item.collocations.map((value) => `<span>${escapeHtml(value)}</span>`).join('')}</div></div>`;
     } else if (card.skill === 'listening' && card.dialogue) {
-      html += `<div class="analysis-note">🎧 ${card.dialogue.speakers.length} ผู้พูด · ฟัง ${listeningPlayCount(card)} รอบ · ${escapeHtml(typeLabel)}</div>`;
+      html += `<div class="analysis-note">🎧 ${card.dialogue.speakers.length} ผู้พูด · ฟัง ${listeningPlayCount(card)} รอบ · ${escapeHtml(typeLabel)}</div>${feedbackTranscriptMarkup(card)}`;
     }
     return html;
+  }
+
+  function setLessonLayout(mode = 'scroll', subtype = '') {
+    const overlay = $('lessonOverlay');
+    const main = $('lessonMain');
+    const footer = $('lessonFooter');
+    const isQuiz = mode === 'quiz';
+    overlay.classList.toggle('quiz-mode', isQuiz);
+    if (isQuiz && subtype) overlay.dataset.quizSubtype = subtype;
+    else overlay.removeAttribute('data-quiz-subtype');
+    main.classList.toggle('quiz-focus', isQuiz);
+    main.classList.toggle('lesson-scroll-mode', !isQuiz);
+    footer.classList.toggle('quiz-footer', isQuiz);
+    main.scrollTop = 0;
+  }
+
+  function updateLessonHeaderStatus() {
+    if (!activeLesson) return;
+    const total = Math.max(1, activeLesson.cards.length);
+    const current = Math.min(total, activeLesson.index + 1);
+    $('lessonEnergy').textContent = `${current}/${total} · 💚 ${activeLesson.energy}`;
+  }
+
+  function resetFeedbackSheet() {
+    const panel = $('feedbackPanel');
+    panel?.classList.remove('collapsed');
+    const toggle = $('feedbackCollapseBtn');
+    if (toggle) {
+      toggle.textContent = '⌄';
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  function optionLayoutClass(card) {
+    const lengths = (card.options || []).map((value) => Array.from(String(value || '')).length);
+    const maxLength = Math.max(0, ...lengths);
+    const totalLength = lengths.reduce((sum, value) => sum + value, 0);
+    const count = lengths.length;
+    const shortGrid = count === 4 && maxLength <= 28 && totalLength <= 86;
+    const twoGrid = count === 2 && maxLength <= 54;
+    return `${shortGrid ? 'options-compact-grid' : twoGrid ? 'options-two-grid' : 'options-stacked'} option-count-${count}`;
+  }
+
+  function quizSubtypeClass(card) {
+    if (card.skill === 'reading') return 'reading';
+    if (card.skill === 'listening') return 'listening';
+    if (card.subtype === 'audio') return 'audio';
+    return card.skill || 'mixed';
+  }
+
+  function feedbackTranscriptMarkup(card) {
+    const dialogue = card.dialogue || DIALOGUE.normalize(card.script);
+    if (!dialogue?.lines?.length) return '';
+    const lines = dialogue.lines.map((line, index) => {
+      const speaker = dialogue.speakers[line.speakerIndex];
+      return `<button type="button" class="feedback-transcript-line speaker-tone-${line.speakerIndex % 6}" data-feedback-dialogue-line="${index}">
+        <span><b>${escapeHtml(speaker?.icon || '🗣️')} ${escapeHtml(line.speaker)}</b><small>${escapeHtml(line.text)}</small></span><i aria-hidden="true">🔊</i>
+      </button>`;
+    }).join('');
+    return `<details class="feedback-transcript"><summary>เปิด Script แยกผู้พูด</summary><div class="feedback-transcript-list">${lines}</div></details>`;
+  }
+
+  function bindFeedbackTranscript(card) {
+    const root = $('feedbackDetails');
+    if (!root || card.skill !== 'listening') return;
+    const dialogue = card.dialogue || DIALOGUE.normalize(card.script);
+    root.querySelectorAll('[data-feedback-dialogue-line]').forEach((button) => {
+      button.onclick = () => {
+        if (!state.profile.sound) { showToast('เปิดเสียงอ่านได้ที่โปรไฟล์'); return; }
+        const lineIndex = Number(button.dataset.feedbackDialogueLine);
+        stopSpeech();
+        button.classList.add('speaking');
+        DIALOGUE.playLine(dialogue, lineIndex, {
+          multiVoice: state.profile.multiVoice !== false,
+          baseRate: getListeningBaseRate(card.level, false),
+          onEnd: () => button.classList.remove('speaking'),
+          onUnsupported: () => button.classList.remove('speaking'),
+        }).catch(() => button.classList.remove('speaking'));
+      };
+    });
   }
 
   function renderLessonCard() {
@@ -1360,14 +1444,16 @@
     const action = $('lessonActionBtn');
     const feedback = $('feedbackPanel');
     feedback.className = 'feedback-panel';
-    feedback.classList.remove('show', 'correct', 'wrong');
+    feedback.classList.remove('show', 'correct', 'wrong', 'collapsed');
     if ($('feedbackDetails')) $('feedbackDetails').innerHTML = '';
+    resetFeedbackSheet();
+    setLessonLayout('scroll');
     activeLesson.selected = null;
     activeLesson.answered = false;
 
     const progress = activeLesson.cards.length ? activeLesson.index / activeLesson.cards.length : 1;
     $('lessonProgressFill').style.width = `${Math.round(progress * 100)}%`;
-    $('lessonEnergy').textContent = `💚 ${activeLesson.energy}`;
+    updateLessonHeaderStatus();
 
     if (activeLesson.index >= activeLesson.cards.length) {
       renderLessonSummary();
@@ -1422,6 +1508,7 @@
       return;
     }
 
+    setLessonLayout('quiz', quizSubtypeClass(card));
     renderQuestion(card, main);
     action.textContent = 'ตรวจคำตอบ';
     action.disabled = true;
@@ -1452,15 +1539,19 @@
       </button>`;
     }).join('');
     const summary = count > 1 ? `${count} ผู้พูด · แยกเสียงอัตโนมัติ` : 'เสียงเดียว / ประกาศ';
-    return `<article class="listening-card" data-listening-card="${escapeAttr(card.listeningId || cardKey(card))}">
+    return `<article class="listening-card compact-listening" data-listening-card="${escapeAttr(card.listeningId || cardKey(card))}">
       <div class="speaker-stage" aria-label="ผู้พูดในบทสนทนา">${speakerChips}</div>
-      <button type="button" class="audio-orb" data-dialogue-play aria-label="เล่นบทสนทนาทั้งหมด">▶</button>
-      <div class="audio-status" data-dialogue-status aria-live="polite">${escapeHtml(summary)} · แตะเพื่อฟัง</div>
-      <div class="audio-tools">
-        <button type="button" class="audio-tool" data-dialogue-slow>🐢 ฟังช้า</button>
-        <button type="button" class="audio-tool" data-dialogue-stop>■ หยุด</button>
+      <div class="audio-control-row">
+        <button type="button" class="audio-orb" data-dialogue-play aria-label="เล่นบทสนทนาทั้งหมด">▶</button>
+        <div class="audio-control-copy">
+          <div class="audio-status" data-dialogue-status aria-live="polite">${escapeHtml(summary)} · แตะเพื่อฟัง</div>
+          <div class="audio-tools">
+            <button type="button" class="audio-tool" data-dialogue-slow>🐢 ช้า</button>
+            <button type="button" class="audio-tool" data-dialogue-stop>■ หยุด</button>
+          </div>
+        </div>
       </div>
-      <div class="voice-fallback-note">ถ้า iPhone มีเสียงญี่ปุ่นหลายเสียง ระบบจะเลือกคนละเสียง หากมีเสียงเดียว ระบบจะแยกด้วยระดับเสียงและความเร็ว</div>
+      <div class="voice-fallback-note">ระบบจะเลือกเสียงญี่ปุ่นคนละเสียงเมื่ออุปกรณ์รองรับ</div>
       <div class="script-reveal hidden" id="currentScript"><div class="script-heading"><strong>Script แยกผู้พูด</strong><small>แตะแต่ละบรรทัดเพื่อฟังซ้ำ</small></div>${transcript}</div>
     </article>`;
   }
@@ -1542,39 +1633,51 @@
 
   function renderQuestion(card, main) {
     const targetSeconds = Number(card.estimatedSeconds || TEXTBOOK.estimatedSeconds(card.questionType || card.subtype || card.skill, card.level));
-    let body = `<div class="lesson-question-top"><div class="lesson-kicker">${escapeHtml(card.kicker)}</div><div class="question-timer" id="questionTimer">⏱ 00:00</div></div><div class="question-meta-row"><span class="question-type-chip">${escapeHtml(questionTypeLabel(card.questionType || card.subtype || card.skill))}</span>${targetSeconds ? `<span class="target-time-chip">เป้า ~${targetSeconds}s</span>` : ''}</div><h2 class="lesson-question" id="lessonTitle">${escapeHtml(card.prompt).replace(/\n/g, '<br>')}</h2>`;
-    if (card.hint) body += `<p class="lesson-hint">${escapeHtml(card.hint)}</p>`;
+    const subtype = quizSubtypeClass(card);
+    const optionClass = optionLayoutClass(card);
+    let stimulus = '';
+    let inlineAudio = '';
 
-    if (card.subtype === 'reading') {
-      body += `<article class="passage-card"><div class="passage-heading-row"><h3 class="passage-title">${escapeHtml(card.title)}</h3><span>${escapeHtml(questionTypeLabel(card.questionType || 'reading_short_passage'))}</span></div><p class="passage-text">${escapeHtml(card.passage)}</p></article>`;
-    }
-
-    if (card.subtype === 'listening') {
-      body += renderListeningMarkup(card);
+    if (card.skill === 'reading' && card.passage) {
+      stimulus = `<article class="passage-card compact-passage"><div class="passage-heading-row"><h3 class="passage-title">${escapeHtml(card.title)}</h3><span>${escapeHtml(questionTypeLabel(card.questionType || 'reading_short_passage'))}</span></div><div class="passage-scroll" tabindex="0"><p class="passage-text">${escapeHtml(card.passage)}</p></div></article>`;
+    } else if (card.skill === 'listening') {
+      stimulus = renderListeningMarkup(card);
     } else if (card.subtype === 'audio') {
-      body += `<article class="listening-card"><button type="button" class="audio-orb" data-speak="${escapeAttr(card.speakText)}" aria-label="เล่นเสียงคำศัพท์">🔊</button><div class="audio-status">แตะฟังคำศัพท์ แล้วเลือกความหมาย</div></article>`;
+      stimulus = `<article class="listening-card audio-word-card"><button type="button" class="audio-orb" data-speak="${escapeAttr(card.speakText)}" aria-label="เล่นเสียงคำศัพท์">🔊</button><div class="audio-status">แตะฟัง แล้วเลือกคำตอบ</div></article>`;
     } else if (card.speakText) {
-      body += `<button type="button" class="ghost-btn small-btn" data-speak="${escapeAttr(card.speakText)}">🔊 ฟังคำ/ประโยค</button><div style="height:12px"></div>`;
+      inlineAudio = `<div class="quiz-inline-audio"><button type="button" class="ghost-btn small-btn" data-speak="${escapeAttr(card.speakText)}">🔊 ฟังคำ/ประโยค</button></div>`;
     }
 
-    body += '<div class="options">';
-    card.options.forEach((option, index) => {
-      body += `<button type="button" class="option-btn" data-option-index="${index}"><span class="option-label">${String.fromCharCode(65 + index)}</span>${escapeHtml(option)}</button>`;
-    });
-    body += '</div>';
-    main.innerHTML = body;
+    const hint = card.hint ? `<details class="quiz-hint"><summary>💡 คำแนะนำ</summary><p>${escapeHtml(card.hint)}</p></details>` : '';
+    const options = (card.options || []).map((option, index) => `<button type="button" class="option-btn" data-option-index="${index}" aria-pressed="false"><span class="option-label">${String.fromCharCode(65 + index)}</span><span class="option-copy">${escapeHtml(option)}</span></button>`).join('');
+    const stimulusClass = stimulus ? 'has-stimulus' : 'no-stimulus';
+
+    main.innerHTML = `<section class="quiz-frame quiz-${escapeAttr(subtype)} ${stimulusClass}">
+      <header class="quiz-question-zone">
+        <div class="lesson-question-top"><div class="lesson-kicker">${escapeHtml(card.kicker)}</div><div class="question-timer" id="questionTimer">⏱ 00:00</div></div>
+        <div class="question-meta-row"><span class="question-type-chip">${escapeHtml(questionTypeLabel(card.questionType || card.subtype || card.skill))}</span>${targetSeconds ? `<span class="target-time-chip">เป้า ~${targetSeconds}s</span>` : ''}</div>
+        <h2 class="lesson-question" id="lessonTitle">${escapeHtml(card.prompt).replace(/\n/g, '<br>')}</h2>
+        <div class="quiz-support-row">${hint}${inlineAudio}</div>
+      </header>
+      <section class="quiz-stimulus-zone ${stimulus ? '' : 'is-empty'}">${stimulus}</section>
+      <section class="quiz-answer-zone"><div class="options ${optionClass}">${options}</div></section>
+    </section>`;
 
     $$('[data-option-index]', main).forEach((button) => {
       button.addEventListener('click', () => {
         if (activeLesson.answered) return;
-        $$('[data-option-index]', main).forEach((b) => b.classList.remove('selected'));
+        $$('[data-option-index]', main).forEach((other) => {
+          other.classList.remove('selected');
+          other.setAttribute('aria-pressed', 'false');
+        });
         button.classList.add('selected');
+        button.setAttribute('aria-pressed', 'true');
         activeLesson.selected = Number(button.dataset.optionIndex);
         $('lessonActionBtn').disabled = false;
       });
     });
     bindSpeakButtons(main);
-    if (card.subtype === 'listening') bindListeningControls(main, card);
+    if (card.skill === 'listening') bindListeningControls(main, card);
     startQuestionTimer();
     if (card.subtype === 'audio' && state.profile.sound) window.setTimeout(() => speakJapanese(card.speakText), 350);
   }
@@ -1624,7 +1727,6 @@
 
     if (card.subtype === 'listening') {
       stopSpeech();
-      $('currentScript')?.classList.remove('hidden');
     }
 
     let explanation = card.explanation;
@@ -1635,9 +1737,10 @@
     }
     if (elapsedSeconds) explanation = `${explanation} · ใช้เวลา ${formatElapsed(elapsedSeconds)}`;
     showFeedback(correct, explanation, feedbackDetailsMarkup(card, correct, selected, elapsedSeconds));
+    bindFeedbackTranscript(card);
     $('lessonActionBtn').textContent = activeLesson.index === activeLesson.cards.length - 1 ? 'ดูสรุป' : 'ไปต่อ';
     $('lessonActionBtn').disabled = false;
-    $('lessonEnergy').textContent = `💚 ${activeLesson.energy}`;
+    updateLessonHeaderStatus();
 
     if (!correct) recordMistake(card, selected, elapsedSeconds);
     saveState();
@@ -1683,7 +1786,8 @@
   function showFeedback(correct, text, detailsHtml = '') {
     const panel = $('feedbackPanel');
     panel.className = `feedback-panel show ${correct ? 'correct' : 'wrong'}`;
-    $('feedbackTitle').textContent = correct ? '✅ ถูกต้อง เก่งมาก!' : '🧠 ยังไม่ใช่ แต่ระบบจำสาเหตุไว้แล้ว';
+    resetFeedbackSheet();
+    $('feedbackTitle').textContent = correct ? '✅ ถูกต้อง เก่งมาก!' : '🧠 ยังไม่ใช่ ระบบจำสาเหตุแล้ว';
     $('feedbackText').textContent = text;
     if ($('feedbackDetails')) $('feedbackDetails').innerHTML = detailsHtml || '';
   }
@@ -1691,8 +1795,10 @@
   function renderLessonSummary() {
     stopQuestionTimer();
     stopSpeech();
+    setLessonLayout('scroll');
     if (!activeLesson.finished) completeLesson();
     $('lessonProgressFill').style.width = '100%';
+    $('lessonEnergy').textContent = `✓ · 💚 ${activeLesson.energy}`;
     const lessonAccuracy = activeLesson.attempts ? Math.round(activeLesson.correct / activeLesson.attempts * 100) : 100;
     const weakText = activeLesson.wrongItems.length
       ? activeLesson.wrongItems.slice(0, 3).map((m) => {
@@ -2780,7 +2886,7 @@
   }
 
   function exportProgress() {
-    const payload = { app: 'JLPT Coach N5-N1', appVersion: '2.3.0', schemaVersion: SCHEMA_VERSION, contentVersion: CONTENT.meta.version, exportedAt: new Date().toISOString(), state };
+    const payload = { app: 'JLPT Coach N5-N1', appVersion: '2.3.1', schemaVersion: SCHEMA_VERSION, contentVersion: CONTENT.meta.version, exportedAt: new Date().toISOString(), state };
     downloadBlob(JSON.stringify(payload, null, 2), `JLPT_Coach_Backup_${localISO()}.json`, 'application/json');
     showToast('Export progress แล้ว');
   }
@@ -2849,6 +2955,12 @@
     $('quickFiveBtn').onclick = () => startLesson(buildModeLesson('quick'));
     $('quickReviewBtn').onclick = () => startLesson(buildModeLesson('review'));
     $('lessonCloseBtn').onclick = () => closeLesson(false);
+    if ($('feedbackCollapseBtn')) $('feedbackCollapseBtn').onclick = () => {
+      const panel = $('feedbackPanel');
+      const collapsed = panel.classList.toggle('collapsed');
+      $('feedbackCollapseBtn').textContent = collapsed ? '⌃' : '⌄';
+      $('feedbackCollapseBtn').setAttribute('aria-expanded', String(!collapsed));
+    };
 
     $$('.mode-card').forEach((button) => { button.onclick = () => startLesson(buildModeLesson(button.dataset.mode)); });
     $$('[data-review-filter]').forEach((button) => {

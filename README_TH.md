@@ -1,96 +1,61 @@
-# JLPT Coach N5–N1 — Version 2.3.0
+# JLPT Coach N5–N1 — Version 2.3.1 Compact Quiz
 
-Version 2.3.0 turns the prepared Textbook Data Pack into a working PWA. It keeps the adaptive score plan, SRS, Local Auto Save, open-licensed Vocabulary/Kanji sync, and Multi-Voice Listening from previous releases, then adds a Textbook Learning Engine for N5–N3.
+Version 2.3.1 เป็น Patch Release ต่อจาก V2.3.0 โดยปรับหน้าทำควิซให้ผู้ใช้ **อ่าน ฟัง เลือกคำตอบ และกดตรวจคำตอบได้ในหน้าจอมือถือเดียว** โดยไม่ต้องเลื่อนทั้งหน้า
 
-## What is new
+## จุดเปลี่ยนหลัก
 
-### 1. Textbook Learning Path
-- N5: 8 stages
-- N4: 10 stages
-- N3: 12 stages
-- Each stage links Grammar, topic tags, and exam question types.
-- Stage progress is saved locally and marked complete at 70%+ accuracy.
+- หน้าควิซใช้ `100dvh` และล็อก Whole-page scrolling ระหว่างตอบ
+- คำถาม เวลาเป้าหมาย เนื้อหา/เสียง ตัวเลือก และปุ่มตรวจคำตอบอยู่ใน Viewport เดียว
+- Vocabulary, Kanji และ Grammar แบบ 4 ตัวเลือกแสดงเป็นตาราง 2 × 2 ที่แตะง่าย
+- Reading ใช้ช่องบทอ่านที่เลื่อนภายในได้ โดยตัวเลือกและปุ่มตอบยังคงมองเห็น
+- Listening ย่อ Player ให้เห็นผู้พูด ปุ่ม Play/Slow/Stop และตัวเลือกพร้อมกัน
+- หลังตอบ เฉลยเปิดเป็น Bottom Sheet ที่เลื่อนภายในและย่อ/ขยายได้ โดยปุ่ม “ไปต่อ” ยังคงอยู่ด้านล่าง
+- Script แยกผู้พูดถูกย้ายไปอยู่ในแผงเฉลย เพื่อไม่ดันตัวเลือกออกจากหน้าจอ
+- รองรับ iPhone Safe Area, Dynamic Viewport และหน้าจอเตี้ย เช่น 320 × 568
+- Progress เดิมไม่หาย เพราะยังใช้ Storage Key `jlpt-coach-state-v2` และ State Schema 3
 
-### 2. Question Lab and Exam Blueprint
-- 17 question types covering Vocabulary, Grammar, Reading, and Listening.
-- Users can directly practice a weak question type rather than only choosing a broad skill.
-- Question types include Kanji reading, orthography, context, grammar choice/order/cloze, short/medium reading, information retrieval, task listening, key point, quick response, and announcement.
+## การเลื่อนที่ยังมีอยู่
 
-### 3. Error Analytics
-- 35 error codes distinguish causes such as Kanji reading, orthography, collocation, transitivity, conjugation, nuance, sentence order, inference, date/time, negation, speaker tracking, and final-decision mistakes.
-- Mistake Log stores question type, error code, response time, selected answer, correct answer, number of speakers, and replay count when applicable.
-- Adaptive weighting uses these subtypes in addition to overall skill accuracy.
+คำว่า “ไม่ต้องเลื่อน” ในรุ่นนี้หมายถึง **ไม่ต้องเลื่อนหน้าควิซทั้งหน้าเพื่อไปหาตัวเลือกหรือปุ่มตอบ**
 
-### 4. Grammar Study Engine
-- Quick Card: pattern, connection, short meaning, and example.
-- Deep Explain: nuance, why the answer is correct, common mistakes, memory hint, and related contrast groups.
-- 16 contrast groups are included for easily confused patterns.
+กรณีบทอ่านยาว เนื้อหาจะเลื่อนเฉพาะภายในกรอบ Reading เท่านั้น เพื่อรักษาขนาดตัวอักษรและไม่ตัดข้อความ ส่วนตัวเลือกและปุ่มตรวจคำตอบจะอยู่ในหน้าจอตลอดเวลา
 
-### 5. Topic and Collocation Training
-- N3 vocabulary structure uses topic and word-usage taxonomy.
-- Selected N4/N3 items include collocations, topic IDs, and transitivity pairs.
-- Topic progress is tracked separately from the original theme list.
+## สิ่งที่ยังคงอยู่จาก V2.3.0
 
-### 6. Mock Ladder
-- 10 stages from Diagnostic to Final Readiness.
-- Saves best accuracy, latest accuracy, attempts, and best time for each stage.
+- N5–N1 Adaptive Plan
+- Textbook Learning Path สำหรับ N5/N4/N3
+- Question Lab 17 ประเภท
+- Error Taxonomy 35 รหัส
+- Grammar Quick Card / Deep Explain / Contrast Groups
+- Topic และ Collocation Training
+- Mock Ladder 10 ขั้น
+- Multi-Voice Listening
+- SRS, Mistake Log, Response-time tracking
+- Local Auto Save และ Export/Import JSON
+- Open-licensed Vocabulary/Kanji Sync และ IndexedDB Offline Cache
 
-### 7. Multi-Voice Listening improvements
-- The app validates dialogue turns from the script and uses the speaker count found in the conversation.
-- Two people receive two speaker profiles; three people receive three profiles.
-- Different Japanese system voices are used when available; Pitch/Rate fallback remains when iOS exposes only one voice.
-- Script remains hidden until answering, then becomes a line-by-line replay transcript.
+## อัปเดตจาก V2.3.0
 
-## Bundled content in this release
+1. Export Progress เป็น JSON ก่อน
+2. อัปโหลดไฟล์ใน `JLPT_Coach_V2_3_1_CompactQuiz_Update.zip` ทับไฟล์เดิมที่ Root ของ GitHub Repository
+3. รอ GitHub Pages Deploy
+4. เปิด URL เดิมใน Safari แล้ว Refresh
+5. ปิดแอปจาก App Switcher และเปิดใหม่จาก Home Screen
+6. เข้า Profile และตรวจว่าแสดง Version 2.3.1
 
-| Level | Vocabulary starter | Grammar | Reading | Listening | Practice questions |
-|---|---:|---:|---:|---:|---:|
-| N5 | 40 | 23 | 10 | 10 | 43 |
-| N4 | 180 | 59 | 28 | 28 | 115 |
-| N3 | 40 | 31 | 12 | 12 | 55 |
-| N2 | 40 | 15 | 6 | 6 | 27 |
-| N1 | 40 | 15 | 6 | 6 | 27 |
+รุ่นนี้ไม่เปลี่ยนคลัง Content จึง **ไม่จำเป็นต้องกด Sync content ใหม่** หากคลังเดิมทำงานปกติ
 
+## ไฟล์สำคัญที่เปลี่ยน
 
-The Vocabulary column above is the bundled curated starter database. After a successful open-licensed content sync, the app still targets cumulative coverage of N5 800/100 Kanji, N4 1,500/300, N3 3,750/650, N2 6,000/1,000, and N1 10,000/2,000.
+- `index.html` — โครงสร้าง Feedback Bottom Sheet และ Asset version
+- `styles.css` — Compact Quiz Focus Mode และ Responsive rules
+- `app.js` — Layout state, Question renderer, compact listening, feedback transcript
+- `sw.js` — App-shell cache รุ่นใหม่
+- `manifest.webmanifest` — คำอธิบายรุ่น
+- `VERSION.txt` — Version metadata
 
-## Rights and source policy
+## ข้อควรระวัง
 
-The uploaded textbooks were used as references for organization, pedagogy, topic coverage, and question-format taxonomy. The app does not embed scanned pages, textbook illustrations, or copied question sets. New public content is marked `original_rewrite`; open datasets retain their licenses and attribution. See `TEXTBOOK_RIGHTS_REGISTRY.json` and `CONTENT_LICENSES.md`.
-
-## Updating an existing GitHub Pages installation
-
-1. In the current app, open Profile and Export Progress to JSON.
-2. Extract `JLPT_Coach_V2_3_0_Update.zip`.
-3. Upload every file from the update package to the root of the same GitHub repository and replace files with the same names.
-4. Commit and wait for GitHub Pages deployment.
-5. Open the same site URL in Safari while online and refresh once.
-6. Close JLPT Coach from the App Switcher and reopen it from the Home Screen.
-7. Open Profile and verify Version 2.3.0 / Textbook Engine status.
-8. Run “Sync content again” once. V2.3.0 uses a new IndexedDB content-cache key so the licensed Vocabulary/Kanji pack is rebuilt together with the new textbook content.
-
-Do not delete Safari Website Data and do not press Reset before exporting a backup.
-
-## Save compatibility
-
-- Local Storage key remains `jlpt-coach-state-v2`.
-- Existing Profile, exam scores, XP, streak, SRS, mistakes, mock tests, and settings remain.
-- New schema-3 fields are added non-destructively: subtype analytics, path progress, mock-ladder progress, topic sessions, and content-schema version.
-- Different devices still keep separate local saves unless a cloud backend is added later.
-
-## Main files
-
-- `textbook-engine.js`: blueprint, error, topic, grammar-contrast, path, and subtype analytics logic.
-- `content.json` / `data.js`: Version 2.3 content database.
-- `app.js`: V2.3 UI and adaptive integration.
-- `dialogue-engine.js`: multi-speaker parsing and voice assignment.
-- `content-config.js`: open-content sources and V2.3 cache version.
-- `content-engine.js` / `content-loader.js`: merge, deduplicate, IndexedDB cache, and fallback.
-- `sw.js`: offline app-shell cache.
-
-## Limitations
-
-- N5/N4/N3 receive the strongest Textbook Learning Path expansion. N2/N1 retain the general adaptive system and starter content but do not yet have equivalent textbook depth from the supplied files.
-- Listening still uses Web Speech / iOS Japanese voices rather than studio-recorded human audio.
-- Projected score and readiness are learning indicators, not official JLPT score predictions.
-- The expanded open Vocabulary/Kanji lists are community/open-dataset classifications, not official post-2010 JLPT lists.
+- อย่าลบ Safari Website Data ก่อน Export Backup
+- อย่าเปลี่ยน URL/Repository หากต้องการให้ Local Progress เดิมตามมาอัตโนมัติ
+- หากยังเห็นหน้าตาเก่า ให้เปิด URL ใน Safari แล้ว Refresh จากนั้นปิดและเปิด PWA ใหม่

@@ -1,20 +1,17 @@
 JLPT Coach N5–N1
-Version: 2.3.0
+Version: 2.3.1
 Build date: 2026-08-31
 Storage key: jlpt-coach-state-v2
 State schema: 3
-App-shell cache: jlpt-coach-v2-3-0-20260831-2
+App-shell cache: jlpt-coach-v2-3-1-20260831-1
 Content cache: licensed-content-2.3.0-20260831-1
 
-Core features:
-- Personalized N5–N1 onboarding, score analysis, and adaptive study weighting
-- Textbook Learning Path for N5/N4/N3
-- 17 Question Blueprints and 35 Error Codes
-- Grammar Quick Card, Deep Explain, common-error notes, and contrast groups
-- Topic/Collocation training and transitivity-pair practice
-- 10-stage Mock Ladder and subtype analytics
-- 267 structured practice questions in the bundled content
-- Multi-Voice Listening with separate speaker profiles and corrected turn metadata
-- SRS, Mistake Log, response-time tracking, local auto-save, JSON backup
-- Open-licensed Vocabulary/Kanji sync with IndexedDB offline cache
-- Existing local progress preserved via storage key jlpt-coach-state-v2
+Release focus:
+- Compact Quiz Focus Mode: question, stimulus/audio, choices, and action button remain in one mobile viewport
+- Whole lesson page does not scroll while answering
+- Long reading passages scroll only inside the passage pane while choices remain visible
+- Listening player is compact and keeps multi-speaker chips, play, slow, and stop controls visible
+- Feedback opens as a collapsible bottom sheet above the fixed Next button
+- Short four-choice questions use a 2 × 2 touch-friendly answer grid
+- Dynamic viewport (100dvh), iPhone safe-area support, portrait and compact-height layouts
+- Existing Textbook Learning Engine, SRS, Mistake Log, Multi-Voice, adaptive analytics, and local progress preserved

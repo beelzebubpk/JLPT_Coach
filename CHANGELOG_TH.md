@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.3.1 — 2026-08-31
+
+- เพิ่ม Compact Quiz Focus Mode แบบ One-screen
+- ล็อก Whole-page scrolling ระหว่างตอบควิซ
+- ตรึงตัวเลือกและปุ่มตรวจคำตอบให้อยู่ใน Viewport
+- Reading เลื่อนเฉพาะ Passage pane
+- ปรับ Listening Player ให้กะทัดรัดและเห็น Multi-Voice controls พร้อมตัวเลือก
+- ย้าย Script หลังตอบไปยัง Feedback Bottom Sheet
+- เพิ่ม Feedback Bottom Sheet แบบย่อ/ขยายและ internal scroll
+- เพิ่ม Dynamic Viewport, iPhone Safe Area, compact-height และ landscape rules
+- แก้ Vocab Kanji-reading ไม่ให้ถูกแสดงเป็น Reading passage ว่าง
+- คง Storage Key และ Schema เดิมเพื่อรักษา Progress
+
 ## 2.3.0 — 2026-08-31
 
 - เปลี่ยน Textbook Data Pack ให้เป็นฟังก์ชันในแอปจริง
